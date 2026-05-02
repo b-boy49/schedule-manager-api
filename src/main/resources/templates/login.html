@@ -3,33 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ログイン | ゲーム参加型日程</title>
+    <title th:text="#{login.title} + ' | ' + #{app.title}">Login</title>
     <link rel="stylesheet" href="/css/calendar.css">
 </head>
 <body>
 <section class="page-hero auth-title-hero">
-    <h1>ゲーム参加型日程</h1>
+    <h1 th:text="#{app.title}">Game Participation Scheduler</h1>
+    <nav class="hero-nav" aria-label="language">
+        <a th:href="@{/login(lang='ja')}" th:text="#{common.lang.ja}">日本語</a>
+        <a th:href="@{/login(lang='en')}" th:text="#{common.lang.en}">English</a>
+    </nav>
 </section>
 
 <main class="app-shell auth-shell auth-single-shell auth-centered-shell">
     <section class="calendar-pane auth-card auth-single-card">
-        <h2>ログイン</h2>
+        <h2 th:text="#{login.title}">Login</h2>
 
-        <p class="success-text" th:if="${registered}">新規登録が完了しました。ログインしてください。</p>
-        <p class="success-text" th:if="${loggedOut}">ログアウトしました。</p>
-        <p class="form-message" th:if="${loginError}">ユーザー名またはパスワードが正しくありません。</p>
+        <p class="success-text" th:if="${registered}" th:text="#{login.registered}"></p>
+        <p class="success-text" th:if="${loggedOut}" th:text="#{login.loggedOut}"></p>
+        <p class="form-message" th:if="${loginError}" th:text="#{login.error}"></p>
 
         <form method="post" action="/login" class="schedule-form">
-            <label for="username">ユーザー名</label>
+            <label for="username" th:text="#{register.username}">Username</label>
             <input id="username" name="username" type="text" required>
 
-            <label for="password">パスワード</label>
+            <label for="password" th:text="#{register.password}">Password</label>
             <input id="password" name="password" type="password" required>
 
-            <button type="submit" class="primary auth-link-button">ログイン</button>
+            <button type="submit" class="primary auth-link-button" th:text="#{common.login}">Login</button>
         </form>
 
-        <a href="/register" class="secondary auth-link-button">新規登録</a>
+        <a href="/register" class="secondary auth-link-button" th:text="#{common.register}">Sign up</a>
     </section>
 </main>
 <script src="/js/theme.js"></script>

@@ -1,9 +1,9 @@
 package com.example.schedulemanager.controller;
 
 import com.example.schedulemanager.dto.RegisterRequest;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import jakarta.validation.Valid;
 import com.example.schedulemanager.service.UserAccountService;
+import org.springframework.validation.BindingResult;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,12 +39,17 @@ public class AuthPageController {
     }
 
     @PostMapping("/register")
-    public String register(RegisterRequest registerRequest) {
+    public String register(@Valid RegisterRequest registerRequest, BindingResult bindingResult, Model model) {
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("registerError", bindingResult.getAllErrors().get(0).getDefaultMessage());
+            return "register";
+        }
         try {
             userAccountService.register(registerRequest);
             return "redirect:/login?registered";
         } catch (IllegalArgumentException ex) {
-            return "redirect:/register?error=" + URLEncoder.encode(ex.getMessage(), StandardCharsets.UTF_8);
+            model.addAttribute("registerError", ex.getMessage());
+            return "register";
         }
     }
 }

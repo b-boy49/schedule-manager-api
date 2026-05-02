@@ -3,35 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>新規登録 | ゲーム参加型日程</title>
+    <title th:text="#{register.title} + ' | ' + #{app.title}">Sign up</title>
     <link rel="stylesheet" href="/css/calendar.css">
 </head>
 <body>
 <main class="app-shell auth-shell auth-single-shell">
     <section class="calendar-pane auth-card auth-single-card">
-        <h1>ゲーム参加型日程</h1>
-        <h2>新規登録</h2>
+        <h1 th:text="#{app.title}">Game Participation Scheduler</h1>
+        <h2 th:text="#{register.title}">Sign up</h2>
 
-        <p class="help-text">必要な情報を入力して登録してください。</p>
+        <nav class="hero-nav" aria-label="language">
+            <a th:href="@{/register(lang='ja')}" th:text="#{common.lang.ja}">日本語</a>
+            <a th:href="@{/register(lang='en')}" th:text="#{common.lang.en}">English</a>
+        </nav>
+
+        <p class="help-text" th:text="#{register.help}"></p>
         <p class="form-message" th:if="${registerError}" th:text="${registerError}"></p>
 
         <form method="post" action="/register" class="schedule-form">
-            <label for="registerUsername">ユーザー名（英数字と_ 4〜30文字）</label>
+            <label for="registerUsername" th:text="#{register.username}">Username</label>
             <input id="registerUsername" name="username" type="text" minlength="4" maxlength="30" required>
 
-            <label for="registerDisplayName">表示名</label>
+            <label for="registerDisplayName" th:text="#{register.displayName}">Display name</label>
             <input id="registerDisplayName" name="displayName" type="text" maxlength="100" required>
 
-            <label for="registerEmail">メールアドレス</label>
+            <label for="registerEmail" th:text="#{register.email}">Email</label>
             <input id="registerEmail" name="email" type="email" maxlength="254" required>
 
-            <label for="registerPassword">パスワード（8〜72文字）</label>
+            <label for="registerPassword" th:text="#{register.password}">Password</label>
             <input id="registerPassword" name="password" type="password" minlength="8" maxlength="72" required>
 
-            <button type="submit" class="primary">登録する</button>
+            <button type="submit" class="primary" th:text="#{register.submit}">Create account</button>
         </form>
 
-        <a href="/login" class="secondary auth-link-button">ログインへ戻る</a>
+        <a href="/login" class="secondary auth-link-button" th:text="#{common.backToLogin}">Back to login</a>
     </section>
 </main>
 <script src="/js/theme.js"></script>
