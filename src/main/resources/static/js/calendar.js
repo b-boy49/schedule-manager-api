@@ -44,6 +44,9 @@ const friendSharePickerCancelButton = document.getElementById("friendSharePicker
 const messageShareableInput = document.getElementById("messageShareable");
 const recruitmentLimitInput = document.getElementById("recruitmentLimit");
 const formMessage = document.getElementById("formMessage");
+const csvImportForm = document.getElementById("csvImportForm");
+const csvImportFileInput = document.getElementById("csvImportFile");
+const csvImportMessage = document.getElementById("csvImportMessage");
 
 document.getElementById("prevMonth").addEventListener("click", async () => {
     await changeMonth(-1);
@@ -128,6 +131,52 @@ form.addEventListener("submit", async (event) => {
         formMessage.textContent = error.message;
     }
 });
+
+if (csvImportForm) {
+    csvImportForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        csvImportMessage.textContent = "";
+
+        const file = csvImportFileInput.files && csvImportFileInput.files[0];
+        if (!file) {
+            csvImportMessage.textContent = "CSV file is required.";
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            const result = await fetchJson("/api/schedules/import", {
+                method: "POST",
+                body: formData
+            });
+
+            const errors = Array.isArray(result.errors) ? result.errors : [];
+            if (errors.length === 0) {
+                csvImportMessage.style.color = "#087057";
+                csvImportMessage.textContent = `Imported ${result.insertedRows}/${result.totalRows} rows.`;
+            } else {
+                const firstFive = errors
+                    .slice(0, 5)
+                    .map((e) => `row ${e.rowNumber}: ${e.message}`)
+                    .join(" | ");
+                const more = errors.length > 5 ? ` ... and ${errors.length - 5} more.` : "";
+                csvImportMessage.style.color = "#be2f2f";
+                csvImportMessage.textContent =
+                    `Imported ${result.insertedRows}/${result.totalRows} rows with ${errors.length} errors. ${firstFive}${more}`;
+            }
+
+            csvImportForm.reset();
+            await loadSchedules(state.selectedDate);
+            await loadMonthMarkers();
+            renderCalendar();
+        } catch (error) {
+            csvImportMessage.style.color = "#be2f2f";
+            csvImportMessage.textContent = error.message;
+        }
+    });
+}
 
 async function changeMonth(offset) {
     state.currentMonth = new Date(state.currentMonth.getFullYear(), state.currentMonth.getMonth() + offset, 1);

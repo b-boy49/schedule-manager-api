@@ -168,6 +168,24 @@ public interface ScheduleMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(ScheduleItem item);
 
+    @Insert({
+            "<script>",
+            "INSERT INTO schedule_item (",
+            "  owner_user_id, schedule_date, priority, completed, completed_at, message_shareable,",
+            "  source_schedule_item_id, source_owner_user_id,",
+            "  title, start_time, end_time, description, shared_with_friends, joinable, recruitment_limit",
+            ") VALUES ",
+            "<foreach collection='items' item='item' separator=','>",
+            "(",
+            "  #{item.ownerUserId}, #{item.scheduleDate}, #{item.priority}, #{item.completed}, #{item.completedAt}, #{item.messageShareable},",
+            "  #{item.sourceScheduleItemId}, #{item.sourceOwnerUserId},",
+            "  #{item.title}, #{item.startTime}, #{item.endTime}, #{item.description}, #{item.sharedWithFriends}, #{item.joinable}, #{item.recruitmentLimit}",
+            ")",
+            "</foreach>",
+            "</script>"
+    })
+    int bulkInsert(@Param("items") List<ScheduleItem> items);
+
     @Update("""
             UPDATE schedule_item
             SET schedule_date = #{scheduleDate},

@@ -1,23 +1,36 @@
 package com.example.schedulemanager.service;
 
 import com.example.schedulemanager.dto.ScheduleRequest;
+import com.example.schedulemanager.dto.ScheduleCsvImportError;
+import com.example.schedulemanager.dto.ScheduleCsvImportResult;
 import com.example.schedulemanager.mapper.ScheduleMapper;
 import com.example.schedulemanager.mapper.UserMapper;
 import com.example.schedulemanager.model.AppUser;
 import com.example.schedulemanager.model.ScheduleItem;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class ScheduleService {
+    private static final List<String> CSV_TEMPLATE_HEADERS = List.of(
+            "scheduleDate", "title", "priority", "startTime", "endTime",
+            "description", "sharedWithFriends", "joinable", "messageShareable", "recruitmentLimit");
+
     private final ScheduleMapper scheduleMapper;
     private final UserMapper userMapper;
     private final GamificationService gamificationService;
@@ -26,6 +39,63 @@ public class ScheduleService {
         this.scheduleMapper = scheduleMapper;
         this.userMapper = userMapper;
         this.gamificationService = gamificationService;
+    }
+
+    @Transactional
+    public ScheduleCsvImportResult importFromCsv(MultipartFile file, String currentUsername) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("CSV file is empty.");
+        }
+
+        AppUser currentUser = getCurrentUser(currentUsername);
+        List<List<String>> records = parseCsv(file);
+        if (records.isEmpty()) {
+            throw new IllegalArgumentException("CSV has no data.");
+        }
+
+        Map<String, Integer> headerIndex = buildHeaderIndex(records.get(0));
+        validateHeaders(headerIndex);
+
+        List<ScheduleItem> validItems = new ArrayList<>();
+        List<ScheduleCsvImportError> errors = new ArrayList<>();
+        int totalRows = 0;
+
+        for (int i = 1; i < records.size(); i += 1) {
+            List<String> row = records.get(i);
+            int rowNumber = i + 1;
+            if (isEmptyRow(row)) {
+                continue;
+            }
+            totalRows += 1;
+            try {
+                ScheduleItem item = parseCsvRow(row, headerIndex, rowNumber);
+                item.setOwnerUserId(currentUser.getId());
+                item.setCompleted(false);
+                item.setCompletedAt(null);
+                item.setSourceScheduleItemId(null);
+                item.setSourceOwnerUserId(null);
+                validItems.add(item);
+            } catch (IllegalArgumentException ex) {
+                errors.add(new ScheduleCsvImportError(rowNumber, ex.getMessage()));
+            }
+        }
+
+        if (!validItems.isEmpty()) {
+            scheduleMapper.bulkInsert(validItems);
+        }
+
+        ScheduleCsvImportResult result = new ScheduleCsvImportResult();
+        result.setTotalRows(totalRows);
+        result.setValidRows(validItems.size());
+        result.setInsertedRows(validItems.size());
+        result.setErrors(errors);
+        return result;
+    }
+
+    public String buildCsvTemplate() {
+        String header = String.join(",", CSV_TEMPLATE_HEADERS);
+        String sample = "2026-05-02,Sample Task,MEDIUM,10:00,11:00,\"Sample description\",false,false,false,";
+        return header + System.lineSeparator() + sample + System.lineSeparator();
     }
 
     @Transactional(readOnly = true)
@@ -245,6 +315,229 @@ public class ScheduleService {
         gamificationService.awardScheduleCreated(currentUser.getId(), created.getTitle(), created.getId());
         decorateForViewer(created, currentUser.getId());
         return created;
+    }
+
+    private List<List<String>> parseCsv(MultipartFile file) {
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+            StringBuilder content = new StringBuilder();
+            char[] buffer = new char[2048];
+            int read;
+            while ((read = reader.read(buffer)) != -1) {
+                content.append(buffer, 0, read);
+            }
+            return splitCsvRecords(content.toString());
+        } catch (IOException ex) {
+            throw new IllegalArgumentException("Failed to read CSV file.");
+        }
+    }
+
+    private List<List<String>> splitCsvRecords(String raw) {
+        List<List<String>> records = new ArrayList<>();
+        List<String> currentRow = new ArrayList<>();
+        StringBuilder currentCell = new StringBuilder();
+        boolean inQuotes = false;
+
+        for (int i = 0; i < raw.length(); i += 1) {
+            char ch = raw.charAt(i);
+            if (inQuotes) {
+                if (ch == '"') {
+                    if (i + 1 < raw.length() && raw.charAt(i + 1) == '"') {
+                        currentCell.append('"');
+                        i += 1;
+                    } else {
+                        inQuotes = false;
+                    }
+                } else {
+                    currentCell.append(ch);
+                }
+                continue;
+            }
+
+            if (ch == '"') {
+                inQuotes = true;
+                continue;
+            }
+            if (ch == ',') {
+                currentRow.add(currentCell.toString());
+                currentCell.setLength(0);
+                continue;
+            }
+            if (ch == '\n') {
+                currentRow.add(currentCell.toString());
+                currentCell.setLength(0);
+                records.add(currentRow);
+                currentRow = new ArrayList<>();
+                continue;
+            }
+            if (ch != '\r') {
+                currentCell.append(ch);
+            }
+        }
+
+        currentRow.add(currentCell.toString());
+        if (!currentRow.isEmpty() && !(currentRow.size() == 1 && currentRow.get(0).isBlank())) {
+            records.add(currentRow);
+        }
+        return records;
+    }
+
+    private Map<String, Integer> buildHeaderIndex(List<String> headerRow) {
+        Map<String, Integer> index = new HashMap<>();
+        for (int i = 0; i < headerRow.size(); i += 1) {
+            String rawHeader = headerRow.get(i);
+            String header = normalize(rawHeader);
+            if (header != null && !header.isBlank()) {
+                if (i == 0 && !header.isEmpty() && header.charAt(0) == '\uFEFF') {
+                    header = header.substring(1);
+                }
+                index.put(header.toLowerCase(Locale.ROOT), i);
+            }
+        }
+        return index;
+    }
+
+    private void validateHeaders(Map<String, Integer> headerIndex) {
+        for (String required : List.of("scheduledate", "title")) {
+            if (!headerIndex.containsKey(required)) {
+                throw new IllegalArgumentException("Missing required CSV header: " + required);
+            }
+        }
+    }
+
+    private boolean isEmptyRow(List<String> row) {
+        for (String cell : row) {
+            if (cell != null && !cell.trim().isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private ScheduleItem parseCsvRow(List<String> row, Map<String, Integer> headerIndex, int rowNumber) {
+        String scheduleDateRaw = getCsvValue(row, headerIndex, "scheduledate");
+        String titleRaw = getCsvValue(row, headerIndex, "title");
+        String priorityRaw = getCsvValue(row, headerIndex, "priority");
+        String startTimeRaw = getCsvValue(row, headerIndex, "starttime");
+        String endTimeRaw = getCsvValue(row, headerIndex, "endtime");
+        String descriptionRaw = getCsvValue(row, headerIndex, "description");
+        String sharedWithFriendsRaw = getCsvValue(row, headerIndex, "sharedwithfriends");
+        String joinableRaw = getCsvValue(row, headerIndex, "joinable");
+        String messageShareableRaw = getCsvValue(row, headerIndex, "messageshareable");
+        String recruitmentLimitRaw = getCsvValue(row, headerIndex, "recruitmentlimit");
+
+        LocalDate scheduleDate = parseRequiredDate(scheduleDateRaw, rowNumber, "scheduleDate");
+        String title = normalize(titleRaw);
+        if (title == null || title.isBlank()) {
+            throw new IllegalArgumentException("row " + rowNumber + ": title is required.");
+        }
+        if (title.length() > 200) {
+            throw new IllegalArgumentException("row " + rowNumber + ": title must be <= 200 chars.");
+        }
+
+        String priority = normalizePriority(priorityRaw);
+        LocalTime startTime = parseOptionalTime(startTimeRaw, rowNumber, "startTime");
+        LocalTime endTime = parseOptionalTime(endTimeRaw, rowNumber, "endTime");
+        String description = normalize(descriptionRaw);
+        if (description != null && description.length() > 1000) {
+            throw new IllegalArgumentException("row " + rowNumber + ": description must be <= 1000 chars.");
+        }
+
+        boolean joinable = parseOptionalBoolean(joinableRaw, rowNumber, "joinable", false);
+        boolean sharedWithFriends = parseOptionalBoolean(sharedWithFriendsRaw, rowNumber, "sharedWithFriends", false);
+        boolean messageShareable = parseOptionalBoolean(messageShareableRaw, rowNumber, "messageShareable", false);
+        Integer recruitmentLimit = parseOptionalInt(recruitmentLimitRaw, rowNumber, "recruitmentLimit");
+
+        if (startTime != null && endTime != null && endTime.isBefore(startTime)) {
+            throw new IllegalArgumentException("row " + rowNumber + ": endTime must be after startTime.");
+        }
+        if (joinable && startTime == null) {
+            throw new IllegalArgumentException("row " + rowNumber + ": startTime is required when joinable=true.");
+        }
+        if (joinable) {
+            if (recruitmentLimit == null) {
+                throw new IllegalArgumentException("row " + rowNumber + ": recruitmentLimit is required when joinable=true.");
+            }
+            if (recruitmentLimit < 1) {
+                throw new IllegalArgumentException("row " + rowNumber + ": recruitmentLimit must be >= 1.");
+            }
+            sharedWithFriends = true;
+        } else {
+            recruitmentLimit = null;
+            messageShareable = false;
+        }
+
+        ScheduleItem item = new ScheduleItem();
+        item.setScheduleDate(scheduleDate);
+        item.setTitle(title);
+        item.setPriority(priority);
+        item.setStartTime(startTime);
+        item.setEndTime(endTime);
+        item.setDescription(description);
+        item.setSharedWithFriends(sharedWithFriends);
+        item.setJoinable(joinable);
+        item.setMessageShareable(joinable && messageShareable);
+        item.setRecruitmentLimit(recruitmentLimit);
+        return item;
+    }
+
+    private String getCsvValue(List<String> row, Map<String, Integer> headerIndex, String key) {
+        Integer idx = headerIndex.get(key);
+        if (idx == null || idx < 0 || idx >= row.size()) {
+            return null;
+        }
+        return row.get(idx);
+    }
+
+    private LocalDate parseRequiredDate(String value, int rowNumber, String field) {
+        String normalized = normalize(value);
+        if (normalized == null || normalized.isBlank()) {
+            throw new IllegalArgumentException("row " + rowNumber + ": " + field + " is required.");
+        }
+        try {
+            return LocalDate.parse(normalized);
+        } catch (DateTimeParseException ex) {
+            throw new IllegalArgumentException("row " + rowNumber + ": " + field + " must be yyyy-MM-dd.");
+        }
+    }
+
+    private LocalTime parseOptionalTime(String value, int rowNumber, String field) {
+        String normalized = normalize(value);
+        if (normalized == null || normalized.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalTime.parse(normalized);
+        } catch (DateTimeParseException ex) {
+            throw new IllegalArgumentException("row " + rowNumber + ": " + field + " must be HH:mm.");
+        }
+    }
+
+    private boolean parseOptionalBoolean(String value, int rowNumber, String field, boolean defaultValue) {
+        String normalized = normalize(value);
+        if (normalized == null || normalized.isBlank()) {
+            return defaultValue;
+        }
+        String lower = normalized.toLowerCase(Locale.ROOT);
+        if ("true".equals(lower) || "1".equals(lower) || "yes".equals(lower) || "y".equals(lower)) {
+            return true;
+        }
+        if ("false".equals(lower) || "0".equals(lower) || "no".equals(lower) || "n".equals(lower)) {
+            return false;
+        }
+        throw new IllegalArgumentException("row " + rowNumber + ": " + field + " must be true/false.");
+    }
+
+    private Integer parseOptionalInt(String value, int rowNumber, String field) {
+        String normalized = normalize(value);
+        if (normalized == null || normalized.isBlank()) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(normalized);
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("row " + rowNumber + ": " + field + " must be integer.");
+        }
     }
 
     private ScheduleItem fromRequest(ScheduleRequest request) {

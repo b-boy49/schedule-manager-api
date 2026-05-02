@@ -53,6 +53,19 @@
                 <p class="help-text">メッセージ機能は準備中です。</p>
             </section>
 
+            <section class="friend-section">
+                <h3>CSV Import</h3>
+                <form id="csvImportForm" class="schedule-form" enctype="multipart/form-data">
+                    <label for="csvImportFile">CSV file</label>
+                    <input id="csvImportFile" name="file" type="file" accept=".csv,text/csv" required>
+                    <div class="form-actions">
+                        <button type="submit" class="primary">Import</button>
+                        <a href="/api/schedules/template" class="secondary auth-link-button csv-template-link">Template CSV</a>
+                    </div>
+                </form>
+                <p id="csvImportMessage" class="form-message" aria-live="polite"></p>
+            </section>
+
             <ul id="scheduleList" class="schedule-list"></ul>
 
             <form id="scheduleForm" class="schedule-form">
@@ -133,6 +146,7 @@
             </section>
         </section>
     </main>
+    <script src="/js/theme.js"></script>
     <script src="/js/calendar.js"></script>
 </body>
 
