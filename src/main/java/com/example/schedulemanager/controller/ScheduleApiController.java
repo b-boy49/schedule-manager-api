@@ -56,6 +56,13 @@ public class ScheduleApiController {
         return scheduleService.getTitleSuggestions(userDetails.getUsername(), limit);
     }
 
+    @GetMapping("/reminders")
+    public List<java.util.Map<String, Object>> reminders(
+            @RequestParam(value = "windowMinutes", defaultValue = "60") int windowMinutes,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return scheduleService.findDueSoonReminders(userDetails.getUsername(), windowMinutes);
+    }
+
     @PostMapping
     public ResponseEntity<ScheduleItem> create(
             @RequestBody ScheduleRequest request,

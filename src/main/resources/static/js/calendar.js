@@ -48,6 +48,13 @@ const formMessage = document.getElementById("formMessage");
 const csvImportForm = document.getElementById("csvImportForm");
 const csvImportFileInput = document.getElementById("csvImportFile");
 const csvImportMessage = document.getElementById("csvImportMessage");
+const notificationPermissionButton = document.getElementById("notificationPermissionButton");
+const notificationEnabledInput = document.getElementById("notificationEnabled");
+const notificationIntervalMinutesInput = document.getElementById("notificationIntervalMinutes");
+const notificationStatus = document.getElementById("notificationStatus");
+
+const NOTIFICATION_SETTINGS_KEY = "schedule_notification_settings";
+let reminderTimerId = null;
 
 document.getElementById("prevMonth").addEventListener("click", async () => {
     await changeMonth(-1);
@@ -177,6 +184,32 @@ if (csvImportForm) {
             csvImportMessage.style.color = "#be2f2f";
             csvImportMessage.textContent = error.message;
         }
+    });
+}
+
+if (notificationPermissionButton) {
+    notificationPermissionButton.addEventListener("click", async () => {
+        if (!("Notification" in window)) {
+            notificationStatus.textContent = "このブラウザは通知に対応していません。";
+            return;
+        }
+        const permission = await Notification.requestPermission();
+        notificationStatus.textContent = `通知権限: ${permission}`;
+        syncReminderTimer();
+    });
+}
+
+if (notificationEnabledInput) {
+    notificationEnabledInput.addEventListener("change", () => {
+        saveNotificationSettings();
+        syncReminderTimer();
+    });
+}
+
+if (notificationIntervalMinutesInput) {
+    notificationIntervalMinutesInput.addEventListener("change", () => {
+        saveNotificationSettings();
+        syncReminderTimer();
     });
 }
 
@@ -800,6 +833,124 @@ async function fetchJson(url, options = {}) {
     return data;
 }
 
+function loadNotificationSettings() {
+    const defaults = { enabled: false, intervalMinutes: 5 };
+    try {
+        const raw = localStorage.getItem(NOTIFICATION_SETTINGS_KEY);
+        if (!raw) {
+            return defaults;
+        }
+        const parsed = JSON.parse(raw);
+        return {
+            enabled: Boolean(parsed.enabled),
+            intervalMinutes: normalizeInterval(parsed.intervalMinutes)
+        };
+    } catch (error) {
+        return defaults;
+    }
+}
+
+function saveNotificationSettings() {
+    const settings = {
+        enabled: Boolean(notificationEnabledInput && notificationEnabledInput.checked),
+        intervalMinutes: normalizeInterval(notificationIntervalMinutesInput ? notificationIntervalMinutesInput.value : 5)
+    };
+    localStorage.setItem(NOTIFICATION_SETTINGS_KEY, JSON.stringify(settings));
+}
+
+function applyNotificationSettings() {
+    const settings = loadNotificationSettings();
+    if (notificationEnabledInput) {
+        notificationEnabledInput.checked = settings.enabled;
+    }
+    if (notificationIntervalMinutesInput) {
+        notificationIntervalMinutesInput.value = String(settings.intervalMinutes);
+    }
+    if (notificationStatus) {
+        notificationStatus.textContent = "通知設定を読み込みました。";
+    }
+}
+
+function normalizeInterval(value) {
+    const parsed = Number.parseInt(String(value ?? "5"), 10);
+    if (Number.isNaN(parsed)) {
+        return 5;
+    }
+    return Math.max(1, Math.min(parsed, 60));
+}
+
+function syncReminderTimer() {
+    if (reminderTimerId != null) {
+        window.clearInterval(reminderTimerId);
+        reminderTimerId = null;
+    }
+    const settings = loadNotificationSettings();
+    if (!settings.enabled) {
+        notificationStatus.textContent = "通知は無効です。";
+        return;
+    }
+    if (!("Notification" in window)) {
+        notificationStatus.textContent = "このブラウザは通知に対応していません。";
+        return;
+    }
+    if (Notification.permission !== "granted") {
+        notificationStatus.textContent = "通知を有効化するには「通知を許可」を押してください。";
+        return;
+    }
+    reminderTimerId = window.setInterval(() => {
+        checkDueSoonTasks(settings.intervalMinutes).catch(() => {
+            notificationStatus.textContent = "通知チェックに失敗しました。";
+        });
+    }, settings.intervalMinutes * 60 * 1000);
+    checkDueSoonTasks(settings.intervalMinutes).catch(() => {
+        notificationStatus.textContent = "通知チェックに失敗しました。";
+    });
+    notificationStatus.textContent = `通知は有効です（${settings.intervalMinutes}分ごと）`;
+}
+
+async function checkDueSoonTasks(intervalMinutes) {
+    const windowMinutes = Math.max(15, intervalMinutes * 2);
+    const reminders = await fetchJson(`/api/schedules/reminders?windowMinutes=${windowMinutes}`);
+    if (!Array.isArray(reminders) || reminders.length === 0) {
+        return;
+    }
+
+    const seen = loadSeenReminderMap();
+    reminders.forEach((item) => {
+        const key = `${item.id}:${item.dueAt}`;
+        if (seen[key]) {
+            return;
+        }
+        const title = item.title || "予定";
+        const minutesLeft = Number(item.minutesLeft ?? 0);
+        const body = minutesLeft <= 0
+            ? "期限時刻です。"
+            : `あと${minutesLeft}分で期限です。`;
+        new Notification(`リマインダー: ${title}`, { body });
+        seen[key] = Date.now();
+    });
+    saveSeenReminderMap(seen);
+}
+
+function loadSeenReminderMap() {
+    const key = "schedule_notification_seen";
+    try {
+        const raw = localStorage.getItem(key);
+        const parsed = raw ? JSON.parse(raw) : {};
+        return parsed && typeof parsed === "object" ? parsed : {};
+    } catch (error) {
+        return {};
+    }
+}
+
+function saveSeenReminderMap(map) {
+    const key = "schedule_notification_seen";
+    const entries = Object.entries(map);
+    const sorted = entries.sort((a, b) => Number(b[1]) - Number(a[1])).slice(0, 300);
+    const trimmed = Object.fromEntries(sorted);
+    localStorage.setItem(key, JSON.stringify(trimmed));
+}
+
 function toDate(yyyyMmDd) {
     const [year, month, day] = yyyyMmDd.split("-").map(Number);
     return new Date(year, month - 1, day);
@@ -1105,6 +1256,8 @@ function isSameDate(date, year, month, day) {
 }
 
 async function initializeCalendarPage() {
+    applyNotificationSettings();
+    syncReminderTimer();
     resetFormForCreate();
     try {
         await loadTitleSuggestions();

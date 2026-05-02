@@ -299,6 +299,29 @@ public interface ScheduleMapper {
             """)
     List<String> findRecentDistinctTitles(@Param("ownerUserId") Long ownerUserId, @Param("limit") int limit);
 
+    @Select("""
+            SELECT s.id, s.owner_user_id, u.username AS owner_username, u.display_name AS owner_display_name,
+                   u.profile_icon_color AS owner_profile_icon_color,
+                   CASE WHEN u.profile_image_data IS NULL THEN FALSE ELSE TRUE END AS owner_has_profile_image,
+                   s.schedule_date, s.priority, s.device_type, s.completed, s.completed_at,
+                   s.message_shareable, s.source_schedule_item_id, s.source_owner_user_id,
+                   su.display_name AS source_owner_display_name,
+                   s.title, s.start_time, s.end_time, s.description, s.shared_with_friends, s.joinable,
+                   s.recruitment_limit,
+                   s.created_at, s.updated_at
+            FROM schedule_item s
+            LEFT JOIN app_user u ON u.id = s.owner_user_id
+            LEFT JOIN app_user su ON su.id = s.source_owner_user_id
+            WHERE s.owner_user_id = #{ownerUserId}
+              AND s.completed = FALSE
+              AND s.schedule_date BETWEEN #{startDate} AND #{endDate}
+            ORDER BY s.schedule_date, COALESCE(s.start_time, TIME '23:59:59'), s.id
+            """)
+    List<ScheduleItem> findOwnedUncompletedInDateRange(
+            @Param("ownerUserId") Long ownerUserId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
+
     @Select({
             "<script>",
             "SELECT ranked.user_id AS user_id, ranked.username, ranked.display_name, ranked.rank_no AS rank, ranked.completed_count",

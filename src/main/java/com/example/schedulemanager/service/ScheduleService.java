@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.LinkedHashMap;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -143,6 +144,36 @@ public class ScheduleService {
         AppUser currentUser = getCurrentUser(currentUsername);
         int safeLimit = limit == null ? 20 : Math.max(1, Math.min(limit, 100));
         return scheduleMapper.findRecentDistinctTitles(currentUser.getId(), safeLimit);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> findDueSoonReminders(String currentUsername, int windowMinutes) {
+        AppUser currentUser = getCurrentUser(currentUsername);
+        int safeWindow = Math.max(1, Math.min(windowMinutes, 24 * 60));
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime threshold = now.plusMinutes(safeWindow);
+        List<ScheduleItem> candidates = scheduleMapper.findOwnedUncompletedInDateRange(
+                currentUser.getId(),
+                now.toLocalDate(),
+                threshold.toLocalDate());
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (ScheduleItem item : candidates) {
+            LocalDateTime dueAt = toDueAt(item);
+            if (dueAt.isBefore(now) || dueAt.isAfter(threshold)) {
+                continue;
+            }
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", item.getId());
+            row.put("title", item.getTitle());
+            row.put("scheduleDate", item.getScheduleDate());
+            row.put("startTime", item.getStartTime());
+            row.put("dueAt", dueAt);
+            row.put("minutesLeft", java.time.Duration.between(now, dueAt).toMinutes());
+            result.add(row);
+        }
+        return result;
     }
 
     @Transactional
@@ -658,6 +689,12 @@ public class ScheduleService {
             return "CONSOLE";
         }
         throw new IllegalArgumentException("デバイスは PC / 家庭用ゲーム機 で指定してください。");
+    }
+
+    private LocalDateTime toDueAt(ScheduleItem item) {
+        LocalDate date = item.getScheduleDate();
+        LocalTime time = item.getStartTime() == null ? LocalTime.of(23, 59) : item.getStartTime();
+        return LocalDateTime.of(date, time);
     }
 
     private void decorateForViewer(ScheduleItem item, Long viewerUserId) {
