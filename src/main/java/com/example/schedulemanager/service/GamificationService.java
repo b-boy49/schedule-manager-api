@@ -2,13 +2,18 @@ package com.example.schedulemanager.service;
 
 import com.example.schedulemanager.mapper.FriendshipMapper;
 import com.example.schedulemanager.mapper.PointHistoryMapper;
+import com.example.schedulemanager.mapper.ScheduleMapper;
 import com.example.schedulemanager.mapper.UserMapper;
 import com.example.schedulemanager.model.AppUser;
 import com.example.schedulemanager.model.FriendUser;
 import com.example.schedulemanager.model.PointHistory;
 import com.example.schedulemanager.model.ScheduleItem;
+import com.example.schedulemanager.model.TaskCompletionRankingRow;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.temporal.TemporalAdjusters;
+import java.time.DayOfWeek;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -35,6 +40,7 @@ public class GamificationService {
     private final UserMapper userMapper;
     private final PointHistoryMapper pointHistoryMapper;
     private final FriendshipMapper friendshipMapper;
+    private final ScheduleMapper scheduleMapper;
 
     @Value("${app.gamification.zone:Asia/Tokyo}")
     private String gamificationZone;
@@ -42,10 +48,12 @@ public class GamificationService {
     public GamificationService(
             UserMapper userMapper,
             PointHistoryMapper pointHistoryMapper,
-            FriendshipMapper friendshipMapper) {
+            FriendshipMapper friendshipMapper,
+            ScheduleMapper scheduleMapper) {
         this.userMapper = userMapper;
         this.pointHistoryMapper = pointHistoryMapper;
         this.friendshipMapper = friendshipMapper;
+        this.scheduleMapper = scheduleMapper;
     }
 
     @Transactional
@@ -165,6 +173,71 @@ public class GamificationService {
         return result;
     }
 
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> buildTaskCompletionRanking(Long currentUserId, String period) {
+        Set<Long> userIds = new LinkedHashSet<>();
+        userIds.add(currentUserId);
+        List<FriendUser> friends = friendshipMapper.findFriends(currentUserId);
+        for (FriendUser friend : friends) {
+            userIds.add(friend.getId());
+        }
+
+        TimeRange range = resolvePeriodRange(period);
+        List<TaskCompletionRankingRow> rows = scheduleMapper.findTaskCompletionRanking(
+                new ArrayList<>(userIds),
+                range.startAt(),
+                range.endAt());
+
+        int maxCompleted = rows.stream()
+                .map(TaskCompletionRankingRow::getCompletedCount)
+                .filter(Objects::nonNull)
+                .max(Integer::compareTo)
+                .orElse(0);
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (TaskCompletionRankingRow row : rows) {
+            int completedCount = row.getCompletedCount() == null ? 0 : row.getCompletedCount();
+            int percent = maxCompleted <= 0 ? 0 : (int) Math.round((completedCount * 100.0) / maxCompleted);
+
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("rank", row.getRank());
+            item.put("id", row.getUserId());
+            item.put("username", row.getUsername());
+            item.put("displayName", row.getDisplayName());
+            item.put("completedCount", completedCount);
+            item.put("progressPercent", Math.min(100, Math.max(0, percent)));
+            item.put("avatarInitial", extractAvatarInitial(row.getDisplayName(), row.getUsername()));
+            item.put("currentUser", Objects.equals(row.getUserId(), currentUserId));
+            result.add(item);
+        }
+        return result;
+    }
+
+    private TimeRange resolvePeriodRange(String period) {
+        String key = period == null ? "all" : period.trim().toLowerCase(Locale.ROOT);
+        LocalDate today = LocalDate.now(ZoneId.of(gamificationZone));
+        if ("week".equals(key)) {
+            LocalDate startDate = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+            return new TimeRange(startDate.atStartOfDay(), startDate.plusWeeks(1).atStartOfDay());
+        }
+        if ("month".equals(key)) {
+            LocalDate startDate = today.with(TemporalAdjusters.firstDayOfMonth());
+            return new TimeRange(startDate.atStartOfDay(), startDate.plusMonths(1).atStartOfDay());
+        }
+        return new TimeRange(null, null);
+    }
+
+    private String extractAvatarInitial(String displayName, String username) {
+        String source = normalizeText(displayName);
+        if (source.isBlank()) {
+            source = normalizeText(username);
+        }
+        if (source.isBlank()) {
+            return "?";
+        }
+        return source.substring(0, 1).toUpperCase(Locale.ROOT);
+    }
+
     private int awardPoints(Long userId, String actionType, String actionLabel, int points, String actionKey) {
         if (points == 0) {
             return 0;
@@ -262,5 +335,8 @@ public class GamificationService {
             String displayName,
             int totalPoints,
             int level) {
+    }
+
+    private record TimeRange(LocalDateTime startAt, LocalDateTime endAt) {
     }
 }

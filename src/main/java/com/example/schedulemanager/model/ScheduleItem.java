@@ -14,6 +14,7 @@ public class ScheduleItem {
     private Boolean ownerHasProfileImage;
     private LocalDate scheduleDate;
     private String priority;
+    private String deviceType;
     private Boolean completed;
     private LocalDateTime completedAt;
     private Boolean messageShareable;
@@ -98,6 +99,14 @@ public class ScheduleItem {
 
     public void setPriority(String priority) {
         this.priority = priority;
+    }
+
+    public String getDeviceType() {
+        return deviceType;
+    }
+
+    public void setDeviceType(String deviceType) {
+        this.deviceType = deviceType;
     }
 
     public Boolean getCompleted() {

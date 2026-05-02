@@ -5,6 +5,9 @@ const friendList = document.getElementById("friendList");
 const incomingRequestList = document.getElementById("incomingRequestList");
 const outgoingRequestList = document.getElementById("outgoingRequestList");
 const levelRankingList = document.getElementById("levelRankingList");
+const rankingTabs = Array.from(document.querySelectorAll(".ranking-tab"));
+
+let currentRankingPeriod = "week";
 
 friendRequestForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -27,10 +30,19 @@ friendRequestForm.addEventListener("submit", async (event) => {
     }
 });
 
+rankingTabs.forEach((tab) => {
+    tab.addEventListener("click", async () => {
+        currentRankingPeriod = tab.dataset.period || "week";
+        rankingTabs.forEach((node) => node.classList.remove("active"));
+        tab.classList.add("active");
+        await loadTaskRanking(currentRankingPeriod);
+    });
+});
+
 async function loadFriendDashboard() {
     try {
         const data = await fetchJson("/api/friends");
-        renderFriendList(friendList, data.friends, "フレンドはまだいません。", (friend) => {
+        renderFriendList(friendList, data.friends, "フレンドがまだいません。", (friend) => {
             return `${friend.displayName} (@${friend.username})`;
         });
 
@@ -38,7 +50,16 @@ async function loadFriendDashboard() {
         renderFriendList(outgoingRequestList, data.outgoingRequests, "送信中の申請はありません。", (request) => {
             return `${request.requesterDisplayName} (@${request.requesterUsername})`;
         });
-        renderLevelRanking(data.levelRanking || []);
+    } catch (error) {
+        friendMessage.style.color = "#be2f2f";
+        friendMessage.textContent = error.message;
+    }
+}
+
+async function loadTaskRanking(period) {
+    try {
+        const data = await fetchJson(`/api/friends/ranking?period=${encodeURIComponent(period)}`);
+        renderLevelRanking(data.rows || []);
     } catch (error) {
         friendMessage.style.color = "#be2f2f";
         friendMessage.textContent = error.message;
@@ -48,7 +69,7 @@ async function loadFriendDashboard() {
 function renderIncomingRequests(incomingRequests) {
     incomingRequestList.innerHTML = "";
     if (!Array.isArray(incomingRequests) || incomingRequests.length === 0) {
-        incomingRequestList.innerHTML = "<li>受信申請はありません。</li>";
+        incomingRequestList.innerHTML = "<li>受信した申請はありません。</li>";
         return;
     }
 
@@ -65,6 +86,7 @@ function renderIncomingRequests(incomingRequests) {
                 friendMessage.style.color = "#087057";
                 friendMessage.textContent = "フレンド申請を承認しました。";
                 await loadFriendDashboard();
+                await loadTaskRanking(currentRankingPeriod);
             } catch (error) {
                 friendMessage.style.color = "#be2f2f";
                 friendMessage.textContent = error.message;
@@ -99,11 +121,60 @@ function renderLevelRanking(rankingRows) {
 
     rankingRows.forEach((row) => {
         const li = document.createElement("li");
-        const name = row.displayName || row.username || "不明";
-        const current = row.currentUser ? "（あなた）" : "";
-        li.textContent = `${row.rank}位 ${name}${current} | Lv.${row.level} | ${row.totalPoints}pt`;
+        li.className = "ranking-item";
+        if (row.currentUser) {
+            li.classList.add("current-user");
+        }
+
+        const medal = document.createElement("div");
+        medal.className = "ranking-medal";
+        medal.textContent = medalText(row.rank);
+
+        const avatar = document.createElement("div");
+        avatar.className = "ranking-avatar";
+        avatar.textContent = (row.avatarInitial || "?").slice(0, 1);
+
+        const body = document.createElement("div");
+        body.className = "ranking-body";
+
+        const title = document.createElement("div");
+        title.className = "ranking-title";
+        const name = row.displayName || row.username || "Unknown";
+        title.textContent = `${row.rank}位 ${name}${row.currentUser ? " (あなた)" : ""}`;
+
+        const meta = document.createElement("div");
+        meta.className = "ranking-meta";
+        meta.textContent = `完了数: ${row.completedCount}`;
+
+        const progressTrack = document.createElement("div");
+        progressTrack.className = "ranking-progress-track";
+        const progressBar = document.createElement("div");
+        progressBar.className = "ranking-progress-bar";
+        progressBar.style.width = `${row.progressPercent || 0}%`;
+        progressTrack.appendChild(progressBar);
+
+        body.appendChild(title);
+        body.appendChild(meta);
+        body.appendChild(progressTrack);
+
+        li.appendChild(medal);
+        li.appendChild(avatar);
+        li.appendChild(body);
         levelRankingList.appendChild(li);
     });
+}
+
+function medalText(rank) {
+    if (rank === 1) {
+        return "🥇";
+    }
+    if (rank === 2) {
+        return "🥈";
+    }
+    if (rank === 3) {
+        return "🥉";
+    }
+    return `${rank}`;
 }
 
 async function fetchJson(url, options = {}) {
@@ -120,4 +191,9 @@ async function fetchJson(url, options = {}) {
     return data;
 }
 
-loadFriendDashboard();
+async function initialize() {
+    await loadFriendDashboard();
+    await loadTaskRanking(currentRankingPeriod);
+}
+
+initialize();

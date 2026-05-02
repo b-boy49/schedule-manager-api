@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -39,7 +40,15 @@ public class FriendApiController {
                 "friends", friendshipService.listFriends(user.getId()),
                 "incomingRequests", friendshipService.listIncomingPending(user.getId()),
                 "outgoingRequests", friendshipService.listOutgoingPending(user.getId()),
-                "levelRanking", gamificationService.buildFriendRanking(user.getId()));
+                "taskRanking", gamificationService.buildTaskCompletionRanking(user.getId(), "all"));
+    }
+
+    @GetMapping("/ranking")
+    public Map<String, Object> taskRanking(
+            @RequestParam(value = "period", defaultValue = "all") String period,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        AppUser user = userAccountService.getByUsername(userDetails.getUsername());
+        return Map.of("period", period, "rows", gamificationService.buildTaskCompletionRanking(user.getId(), period));
     }
 
     @PostMapping("/requests")

@@ -2,7 +2,9 @@ package com.example.schedulemanager.mapper;
 
 import com.example.schedulemanager.model.ScheduleItem;
 import com.example.schedulemanager.model.FriendUser;
+import com.example.schedulemanager.model.TaskCompletionRankingRow;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
@@ -19,7 +21,7 @@ public interface ScheduleMapper {
             SELECT s.id, s.owner_user_id, u.username AS owner_username, u.display_name AS owner_display_name,
                    u.profile_icon_color AS owner_profile_icon_color,
                    CASE WHEN u.profile_image_data IS NULL THEN FALSE ELSE TRUE END AS owner_has_profile_image,
-                   s.schedule_date, s.priority, s.completed, s.completed_at,
+                   s.schedule_date, s.priority, s.device_type, s.completed, s.completed_at,
                    s.message_shareable, s.source_schedule_item_id, s.source_owner_user_id,
                    su.display_name AS source_owner_display_name,
                    s.title, s.start_time, s.end_time, s.description, s.shared_with_friends, s.joinable,
@@ -52,7 +54,7 @@ public interface ScheduleMapper {
             SELECT s.id, s.owner_user_id, u.username AS owner_username, u.display_name AS owner_display_name,
                    u.profile_icon_color AS owner_profile_icon_color,
                    CASE WHEN u.profile_image_data IS NULL THEN FALSE ELSE TRUE END AS owner_has_profile_image,
-                   s.schedule_date, s.priority, s.completed, s.completed_at,
+                   s.schedule_date, s.priority, s.device_type, s.completed, s.completed_at,
                    s.message_shareable, s.source_schedule_item_id, s.source_owner_user_id,
                    su.display_name AS source_owner_display_name,
                    s.title, s.start_time, s.end_time, s.description, s.shared_with_friends, s.joinable,
@@ -71,7 +73,7 @@ public interface ScheduleMapper {
             SELECT s.id, s.owner_user_id, u.username AS owner_username, u.display_name AS owner_display_name,
                    u.profile_icon_color AS owner_profile_icon_color,
                    CASE WHEN u.profile_image_data IS NULL THEN FALSE ELSE TRUE END AS owner_has_profile_image,
-                   s.schedule_date, s.priority, s.completed, s.completed_at,
+                   s.schedule_date, s.priority, s.device_type, s.completed, s.completed_at,
                    s.message_shareable, s.source_schedule_item_id, s.source_owner_user_id,
                    su.display_name AS source_owner_display_name,
                    s.title, s.start_time, s.end_time, s.description, s.shared_with_friends, s.joinable,
@@ -103,7 +105,7 @@ public interface ScheduleMapper {
             SELECT s.id, s.owner_user_id, u.username AS owner_username, u.display_name AS owner_display_name,
                    u.profile_icon_color AS owner_profile_icon_color,
                    CASE WHEN u.profile_image_data IS NULL THEN FALSE ELSE TRUE END AS owner_has_profile_image,
-                   s.schedule_date, s.priority, s.completed, s.completed_at,
+                   s.schedule_date, s.priority, s.device_type, s.completed, s.completed_at,
                    s.message_shareable, s.source_schedule_item_id, s.source_owner_user_id,
                    su.display_name AS source_owner_display_name,
                    s.title, s.start_time, s.end_time, s.description,
@@ -120,7 +122,7 @@ public interface ScheduleMapper {
             SELECT s.id, s.owner_user_id, u.username AS owner_username, u.display_name AS owner_display_name,
                    u.profile_icon_color AS owner_profile_icon_color,
                    CASE WHEN u.profile_image_data IS NULL THEN FALSE ELSE TRUE END AS owner_has_profile_image,
-                   s.schedule_date, s.priority, s.completed, s.completed_at,
+                   s.schedule_date, s.priority, s.device_type, s.completed, s.completed_at,
                    s.message_shareable, s.source_schedule_item_id, s.source_owner_user_id,
                    su.display_name AS source_owner_display_name,
                    s.title, s.start_time, s.end_time, s.description, s.shared_with_friends, s.joinable,
@@ -155,12 +157,12 @@ public interface ScheduleMapper {
 
     @Insert("""
             INSERT INTO schedule_item (
-                owner_user_id, schedule_date, priority, completed, completed_at, message_shareable,
+                owner_user_id, schedule_date, priority, device_type, completed, completed_at, message_shareable,
                 source_schedule_item_id, source_owner_user_id,
                 title, start_time, end_time, description, shared_with_friends, joinable, recruitment_limit
             )
             VALUES (
-                #{ownerUserId}, #{scheduleDate}, #{priority}, #{completed}, #{completedAt}, #{messageShareable},
+                #{ownerUserId}, #{scheduleDate}, #{priority}, #{deviceType}, #{completed}, #{completedAt}, #{messageShareable},
                 #{sourceScheduleItemId}, #{sourceOwnerUserId},
                 #{title}, #{startTime}, #{endTime}, #{description}, #{sharedWithFriends}, #{joinable}, #{recruitmentLimit}
             )
@@ -171,13 +173,13 @@ public interface ScheduleMapper {
     @Insert({
             "<script>",
             "INSERT INTO schedule_item (",
-            "  owner_user_id, schedule_date, priority, completed, completed_at, message_shareable,",
+            "  owner_user_id, schedule_date, priority, device_type, completed, completed_at, message_shareable,",
             "  source_schedule_item_id, source_owner_user_id,",
             "  title, start_time, end_time, description, shared_with_friends, joinable, recruitment_limit",
             ") VALUES ",
             "<foreach collection='items' item='item' separator=','>",
             "(",
-            "  #{item.ownerUserId}, #{item.scheduleDate}, #{item.priority}, #{item.completed}, #{item.completedAt}, #{item.messageShareable},",
+            "  #{item.ownerUserId}, #{item.scheduleDate}, #{item.priority}, #{item.deviceType}, #{item.completed}, #{item.completedAt}, #{item.messageShareable},",
             "  #{item.sourceScheduleItemId}, #{item.sourceOwnerUserId},",
             "  #{item.title}, #{item.startTime}, #{item.endTime}, #{item.description}, #{item.sharedWithFriends}, #{item.joinable}, #{item.recruitmentLimit}",
             ")",
@@ -190,6 +192,7 @@ public interface ScheduleMapper {
             UPDATE schedule_item
             SET schedule_date = #{scheduleDate},
                 priority = #{priority},
+                device_type = #{deviceType},
                 title = #{title},
                 start_time = #{startTime},
                 end_time = #{endTime},
@@ -295,4 +298,38 @@ public interface ScheduleMapper {
             LIMIT #{limit}
             """)
     List<String> findRecentDistinctTitles(@Param("ownerUserId") Long ownerUserId, @Param("limit") int limit);
+
+    @Select({
+            "<script>",
+            "SELECT ranked.user_id AS user_id, ranked.username, ranked.display_name, ranked.rank_no AS rank, ranked.completed_count",
+            "FROM (",
+            "  SELECT u.id AS user_id, u.username, u.display_name,",
+            "         COALESCE(c.completed_count, 0) AS completed_count,",
+            "         RANK() OVER (ORDER BY COALESCE(c.completed_count, 0) DESC, u.id ASC) AS rank_no",
+            "  FROM app_user u",
+            "  LEFT JOIN (",
+            "    SELECT s.owner_user_id, COUNT(*) AS completed_count",
+            "    FROM schedule_item s",
+            "    WHERE s.completed = TRUE",
+            "      <if test='startAt != null'>AND s.completed_at &gt;= #{startAt}</if>",
+            "      <if test='endAt != null'>AND s.completed_at &lt; #{endAt}</if>",
+            "      AND s.owner_user_id IN",
+            "      <foreach collection='userIds' item='uid' open='(' separator=',' close=')'>",
+            "        #{uid}",
+            "      </foreach>",
+            "    GROUP BY s.owner_user_id",
+            "  ) c ON c.owner_user_id = u.id",
+            "  WHERE u.id IN",
+            "  <foreach collection='userIds' item='uid' open='(' separator=',' close=')'>",
+            "    #{uid}",
+            "  </foreach>",
+            ") ranked",
+            "ORDER BY ranked.rank_no, ranked.user_id",
+            "LIMIT 10",
+            "</script>"
+    })
+    List<TaskCompletionRankingRow> findTaskCompletionRanking(
+            @Param("userIds") List<Long> userIds,
+            @Param("startAt") LocalDateTime startAt,
+            @Param("endAt") LocalDateTime endAt);
 }

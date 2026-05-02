@@ -27,6 +27,7 @@ const scheduleDateInput = document.getElementById("scheduleDate");
 const titleInput = document.getElementById("title");
 const titleSuggestions = document.getElementById("titleSuggestions");
 const priorityInput = document.getElementById("priority");
+const deviceTypeInput = document.getElementById("deviceType");
 const startTimeInput = document.getElementById("startTime");
 const endTimeInput = document.getElementById("endTime");
 const descriptionInput = document.getElementById("description");
@@ -91,6 +92,7 @@ form.addEventListener("submit", async (event) => {
     const payload = {
         scheduleDate: scheduleDateInput.value,
         priority: priorityInput.value,
+        deviceType: deviceTypeInput.value,
         title: titleInput.value,
         startTime: startTimeInput.value || null,
         endTime: endTimeInput.value || null,
@@ -332,12 +334,15 @@ async function loadSchedules(dateKey, focusScheduleId = null) {
             const priority = document.createElement("p");
             priority.className = "schedule-priority";
             priority.textContent = `優先度: ${priorityLabel(item.priority)}`;
+            const deviceType = document.createElement("p");
+            deviceType.className = "schedule-priority";
+            deviceType.textContent = `デバイス: ${deviceTypeLabel(item.deviceType)}`;
 
             const completed = document.createElement("p");
             completed.className = item.completed ? "schedule-complete done" : "schedule-complete";
             completed.textContent = item.completed ? "状態: 完了" : "状態: 未完了";
 
-            li.append(owner, title, priority, completed, time, description);
+            li.append(owner, title, priority, deviceType, completed, time, description);
 
             if (item.joinable && item.messageShareable) {
                 const shareable = document.createElement("p");
@@ -602,6 +607,7 @@ function fillFormForEdit(item) {
     scheduleDateInput.value = item.scheduleDate;
     titleInput.value = item.title ?? "";
     priorityInput.value = item.priority ?? "LOW";
+    deviceTypeInput.value = item.deviceType ?? "PC";
     startTimeInput.value = toTimeInput(item.startTime);
     endTimeInput.value = toTimeInput(item.endTime);
     descriptionInput.value = item.description ?? "";
@@ -610,6 +616,10 @@ function fillFormForEdit(item) {
     messageShareableInput.checked = item.messageShareable === true;
     recruitmentLimitInput.value = item.recruitmentLimit ?? "";
     syncJoinableOptions();
+    formMessage.style.color = "#087057";
+    formMessage.textContent = "編集モードです。内容を更新して保存してください。";
+    form.scrollIntoView({ behavior: "smooth", block: "start" });
+    titleInput.focus();
 }
 
 function resetFormForCreate() {
@@ -618,6 +628,7 @@ function resetFormForCreate() {
     scheduleDateInput.value = state.selectedDate;
     titleInput.value = "";
     priorityInput.value = "LOW";
+    deviceTypeInput.value = "PC";
     startTimeInput.value = "";
     endTimeInput.value = "";
     descriptionInput.value = "";
@@ -657,6 +668,14 @@ function priorityLabel(priority) {
         return "MEDIUM";
     }
     return "LOW";
+}
+
+function deviceTypeLabel(deviceType) {
+    const normalized = String(deviceType || "PC").toUpperCase();
+    if (normalized === "CONSOLE") {
+        return "家庭用ゲーム機";
+    }
+    return "PC";
 }
 
 function scheduleParticipationBadgeText(item) {

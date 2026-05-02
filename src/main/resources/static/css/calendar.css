@@ -528,6 +528,90 @@ body::after {
     padding: 6px;
 }
 
+.ranking-tabs {
+    display: flex;
+    gap: 8px;
+    margin: 8px 0 10px;
+}
+
+.ranking-tab {
+    border: 1px solid #b9d8ff;
+    background: #ffffff;
+    color: #21439a;
+    border-radius: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.ranking-tab.active {
+    background: #21439a;
+    color: #ffffff;
+    border-color: #21439a;
+}
+
+.ranking-list {
+    gap: 8px;
+}
+
+.ranking-item {
+    display: grid;
+    grid-template-columns: 40px 36px 1fr;
+    gap: 8px;
+    align-items: center;
+}
+
+.ranking-item.current-user {
+    border-color: #62ceff;
+    box-shadow: 0 0 0 2px #c9f1ff;
+}
+
+.ranking-medal {
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #375b9d;
+}
+
+.ranking-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    background: #dce9ff;
+    color: #204181;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.ranking-title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #1f3570;
+}
+
+.ranking-meta {
+    margin-top: 2px;
+    font-size: 0.78rem;
+    color: #4b5f88;
+}
+
+.ranking-progress-track {
+    margin-top: 5px;
+    width: 100%;
+    height: 7px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: #e7effd;
+}
+
+.ranking-progress-bar {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, #49b6ff, #3be1b2);
+}
+
 .mini-list button {
     margin-top: 4px;
     border: 0;

@@ -55,7 +55,12 @@
 
         <section class="friend-section">
             <h3>フレンド レベルランキング</h3>
-            <ul id="levelRankingList" class="mini-list"></ul>
+            <div class="ranking-tabs" role="tablist" aria-label="ランキング期間">
+                <button type="button" class="ranking-tab active" data-period="week">今週</button>
+                <button type="button" class="ranking-tab" data-period="month">今月</button>
+                <button type="button" class="ranking-tab" data-period="all">全期間</button>
+            </div>
+            <ul id="levelRankingList" class="mini-list ranking-list"></ul>
         </section>
 
         <section id="messageSection" class="friend-section message-section">

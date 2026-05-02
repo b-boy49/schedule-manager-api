@@ -28,7 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class ScheduleService {
     private static final List<String> CSV_TEMPLATE_HEADERS = List.of(
-            "scheduleDate", "title", "priority", "startTime", "endTime",
+            "scheduleDate", "title", "priority", "deviceType", "startTime", "endTime",
             "description", "sharedWithFriends", "joinable", "messageShareable", "recruitmentLimit");
 
     private final ScheduleMapper scheduleMapper;
@@ -94,7 +94,7 @@ public class ScheduleService {
 
     public String buildCsvTemplate() {
         String header = String.join(",", CSV_TEMPLATE_HEADERS);
-        String sample = "2026-05-02,Sample Task,MEDIUM,10:00,11:00,\"Sample description\",false,false,false,";
+        String sample = "2026-05-02,Sample Task,MEDIUM,PC,10:00,11:00,\"Sample description\",false,false,false,";
         return header + System.lineSeparator() + sample + System.lineSeparator();
     }
 
@@ -297,6 +297,7 @@ public class ScheduleService {
         copy.setOwnerUserId(currentUser.getId());
         copy.setScheduleDate(source.getScheduleDate());
         copy.setPriority(source.getPriority());
+        copy.setDeviceType(source.getDeviceType());
         copy.setCompleted(false);
         copy.setCompletedAt(null);
         copy.setMessageShareable(true);
@@ -418,6 +419,7 @@ public class ScheduleService {
         String scheduleDateRaw = getCsvValue(row, headerIndex, "scheduledate");
         String titleRaw = getCsvValue(row, headerIndex, "title");
         String priorityRaw = getCsvValue(row, headerIndex, "priority");
+        String deviceTypeRaw = getCsvValue(row, headerIndex, "devicetype");
         String startTimeRaw = getCsvValue(row, headerIndex, "starttime");
         String endTimeRaw = getCsvValue(row, headerIndex, "endtime");
         String descriptionRaw = getCsvValue(row, headerIndex, "description");
@@ -436,6 +438,7 @@ public class ScheduleService {
         }
 
         String priority = normalizePriority(priorityRaw);
+        String deviceType = normalizeDeviceType(deviceTypeRaw);
         LocalTime startTime = parseOptionalTime(startTimeRaw, rowNumber, "startTime");
         LocalTime endTime = parseOptionalTime(endTimeRaw, rowNumber, "endTime");
         String description = normalize(descriptionRaw);
@@ -471,6 +474,7 @@ public class ScheduleService {
         item.setScheduleDate(scheduleDate);
         item.setTitle(title);
         item.setPriority(priority);
+        item.setDeviceType(deviceType);
         item.setStartTime(startTime);
         item.setEndTime(endTime);
         item.setDescription(description);
@@ -558,6 +562,7 @@ public class ScheduleService {
         }
 
         String priority = normalizePriority(request.getPriority());
+        String deviceType = normalizeDeviceType(request.getDeviceType());
 
         LocalTime startTime = parseTime(request.getStartTime(), "開始時刻");
         LocalTime endTime = parseTime(request.getEndTime(), "終了時刻");
@@ -585,6 +590,7 @@ public class ScheduleService {
         ScheduleItem item = new ScheduleItem();
         item.setScheduleDate(scheduleDate);
         item.setPriority(priority);
+        item.setDeviceType(deviceType);
         item.setTitle(title);
         item.setStartTime(startTime);
         item.setEndTime(endTime);
@@ -637,6 +643,21 @@ public class ScheduleService {
             return upper;
         }
         throw new IllegalArgumentException("優先度は HIGH / MEDIUM / LOW で指定してください。");
+    }
+
+    private String normalizeDeviceType(String value) {
+        String normalized = normalize(value);
+        if (normalized == null || normalized.isBlank()) {
+            return "PC";
+        }
+        String upper = normalized.toUpperCase(Locale.ROOT);
+        if ("PC".equals(upper)) {
+            return "PC";
+        }
+        if ("CONSOLE".equals(upper) || "家庭用ゲーム機".equals(normalized)) {
+            return "CONSOLE";
+        }
+        throw new IllegalArgumentException("デバイスは PC / 家庭用ゲーム機 で指定してください。");
     }
 
     private void decorateForViewer(ScheduleItem item, Long viewerUserId) {
