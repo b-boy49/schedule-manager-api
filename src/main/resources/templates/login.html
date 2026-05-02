@@ -3,16 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ログイン | Schedule Manager</title>
+    <title>ログイン | ゲーム参加型日程</title>
     <link rel="stylesheet" href="/css/calendar.css">
 </head>
 <body>
-<main class="app-shell auth-shell">
-    <section class="calendar-pane auth-card">
-        <h1>Schedule Manager</h1>
+<section class="page-hero auth-title-hero">
+    <h1>ゲーム参加型日程</h1>
+</section>
+
+<main class="app-shell auth-shell auth-single-shell auth-centered-shell">
+    <section class="calendar-pane auth-card auth-single-card">
         <h2>ログイン</h2>
 
-        <p class="success-text" th:if="${registered}">登録が完了しました。ログインしてください。</p>
+        <p class="success-text" th:if="${registered}">新規登録が完了しました。ログインしてください。</p>
         <p class="success-text" th:if="${loggedOut}">ログアウトしました。</p>
         <p class="form-message" th:if="${loginError}">ユーザー名またはパスワードが正しくありません。</p>
 
@@ -23,30 +26,10 @@
             <label for="password">パスワード</label>
             <input id="password" name="password" type="password" required>
 
-            <button type="submit" class="primary">ログイン</button>
+            <button type="submit" class="primary auth-link-button">ログイン</button>
         </form>
-    </section>
 
-    <section class="schedule-pane auth-card">
-        <h2>新規登録</h2>
-        <p class="help-text">登録後、同じユーザー名とパスワードでログインできます。</p>
-        <p class="form-message" th:if="${registerError}" th:text="${registerError}"></p>
-
-        <form method="post" action="/register" class="schedule-form">
-            <label for="registerUsername">ユーザー名（英数字/アンダースコア 4〜30文字）</label>
-            <input id="registerUsername" name="username" type="text" minlength="4" maxlength="30" required>
-
-            <label for="registerDisplayName">表示名</label>
-            <input id="registerDisplayName" name="displayName" type="text" maxlength="100" required>
-
-            <label for="registerEmail">メールアドレス</label>
-            <input id="registerEmail" name="email" type="email" maxlength="254" required>
-
-            <label for="registerPassword">パスワード（8〜72文字）</label>
-            <input id="registerPassword" name="password" type="password" minlength="8" maxlength="72" required>
-
-            <button type="submit" class="primary">登録する</button>
-        </form>
+        <a href="/register" class="secondary auth-link-button">新規登録</a>
     </section>
 </main>
 </body>

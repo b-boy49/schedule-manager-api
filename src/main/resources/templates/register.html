@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新規登録 | ゲーム参加型日程</title>
+    <link rel="stylesheet" href="/css/calendar.css">
+</head>
+<body>
+<main class="app-shell auth-shell auth-single-shell">
+    <section class="calendar-pane auth-card auth-single-card">
+        <h1>ゲーム参加型日程</h1>
+        <h2>新規登録</h2>
+
+        <p class="help-text">必要な情報を入力して登録してください。</p>
+        <p class="form-message" th:if="${registerError}" th:text="${registerError}"></p>
+
+        <form method="post" action="/register" class="schedule-form">
+            <label for="registerUsername">ユーザー名（英数字と_ 4〜30文字）</label>
+            <input id="registerUsername" name="username" type="text" minlength="4" maxlength="30" required>
+
+            <label for="registerDisplayName">表示名</label>
+            <input id="registerDisplayName" name="displayName" type="text" maxlength="100" required>
+
+            <label for="registerEmail">メールアドレス</label>
+            <input id="registerEmail" name="email" type="email" maxlength="254" required>
+
+            <label for="registerPassword">パスワード（8〜72文字）</label>
+            <input id="registerPassword" name="password" type="password" minlength="8" maxlength="72" required>
+
+            <button type="submit" class="primary">登録する</button>
+        </form>
+
+        <a href="/login" class="secondary auth-link-button">ログインへ戻る</a>
+    </section>
+</main>
+</body>
+</html>
