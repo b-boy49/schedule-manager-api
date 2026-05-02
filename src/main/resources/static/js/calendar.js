@@ -3,6 +3,15 @@ const initialToday = app.dataset.today;
 const currentUsername = app.dataset.currentUsername;
 const currentDisplayName = app.dataset.currentDisplayName;
 const DEFAULT_PROFILE_ICON_COLOR = "#BFD6FF";
+const POPULAR_GAME_TITLES = [
+    "Apex Legends",
+    "VALORANT",
+    "Overwatch 2",
+    "Rust",
+    "Minecraft",
+    "Call of Duty",
+    "ARK: Survival Evolved"
+];
 
 const state = {
     currentMonth: toDate(initialToday),
@@ -518,20 +527,26 @@ async function loadMonthMarkers() {
 }
 
 async function loadTitleSuggestions() {
-    const titles = await fetchJson("/api/schedules/title-suggestions?limit=30");
-    if (!Array.isArray(titles)) {
-        return;
+    let titles = [];
+    try {
+        const apiTitles = await fetchJson("/api/schedules/title-suggestions?limit=30");
+        if (Array.isArray(apiTitles)) {
+            titles = apiTitles;
+        }
+    } catch (error) {
+        // API取得失敗時も固定候補は表示する
     }
 
-    titleSuggestions.innerHTML = "";
-    titles
+    const merged = [...POPULAR_GAME_TITLES, ...titles]
         .map((title) => String(title || "").trim())
-        .filter((title, index, array) => title !== "" && array.indexOf(title) === index)
-        .forEach((title) => {
-            const option = document.createElement("option");
-            option.value = title;
-            titleSuggestions.appendChild(option);
-        });
+        .filter((title, index, array) => title !== "" && array.indexOf(title) === index);
+
+    titleSuggestions.innerHTML = "";
+    merged.forEach((title) => {
+        const option = document.createElement("option");
+        option.value = title;
+        titleSuggestions.appendChild(option);
+    });
 }
 
 function buildMonthMarkerMap(rows) {
