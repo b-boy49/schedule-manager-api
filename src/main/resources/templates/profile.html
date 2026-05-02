@@ -6,7 +6,7 @@
     <title>ユーザー編集 | ゲーム予定</title>
     <link rel="stylesheet" href="/css/calendar.css">
 </head>
-<body>
+<body th:style="${labelColorStyle}">
 <header class="page-hero">
     <h1 th:text="${currentDisplayName + 'のプロフィール'}"></h1>
     <nav class="hero-nav" aria-label="メインメニュー">
@@ -60,6 +60,30 @@
 
                 <div class="form-actions">
                     <button type="submit" class="primary">保存</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="friend-section">
+            <h3>ラベル色カスタマイズ</h3>
+            <form id="labelColorForm" class="schedule-form">
+                <label for="labelTextColor">ラベル本文色</label>
+                <input id="labelTextColor" type="color" value="#2B4E93">
+                <div class="form-actions">
+                    <button id="resetLabelTextColorButton" type="button" class="secondary">本文色を初期化</button>
+                </div>
+                <label for="labelHeadingColor">ラベル見出し色</label>
+                <input id="labelHeadingColor" type="color" value="#7D35D8">
+                <div class="form-actions">
+                    <button id="resetLabelHeadingColorButton" type="button" class="secondary">見出し色を初期化</button>
+                </div>
+                <label for="labelMutedColor">ラベル補助色</label>
+                <input id="labelMutedColor" type="color" value="#445A86">
+                <div class="form-actions">
+                    <button id="resetLabelMutedColorButton" type="button" class="secondary">補助色を初期化</button>
+                </div>
+                <div class="form-actions">
+                    <button id="resetAllLabelColorsButton" type="button" class="secondary">すべて初期化</button>
                 </div>
             </form>
         </section>

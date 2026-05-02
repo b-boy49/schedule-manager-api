@@ -14,11 +14,24 @@ const profilePointText = document.getElementById("profilePointText");
 const profileLevelProgressBar = document.getElementById("profileLevelProgressBar");
 const profileLevelNextText = document.getElementById("profileLevelNextText");
 const pointHistoryList = document.getElementById("pointHistoryList");
+const labelTextColorInput = document.getElementById("labelTextColor");
+const labelHeadingColorInput = document.getElementById("labelHeadingColor");
+const labelMutedColorInput = document.getElementById("labelMutedColor");
+const resetLabelTextColorButton = document.getElementById("resetLabelTextColorButton");
+const resetLabelHeadingColorButton = document.getElementById("resetLabelHeadingColorButton");
+const resetLabelMutedColorButton = document.getElementById("resetLabelMutedColorButton");
+const resetAllLabelColorsButton = document.getElementById("resetAllLabelColorsButton");
 const DEFAULT_PROFILE_ICON_COLOR = "#BFD6FF";
 const state = {
     profileImageUrl: "",
     profileIconColor: DEFAULT_PROFILE_ICON_COLOR,
     previewObjectUrl: null
+};
+
+const LABEL_DEFAULTS = {
+    labelText: "#2B4E93",
+    labelHeading: "#7D35D8",
+    labelMuted: "#445A86"
 };
 
 profileForm.addEventListener("submit", async (event) => {
@@ -88,15 +101,127 @@ bioInput.addEventListener("input", () => {
     profilePreviewBio.textContent = bioInput.value.trim() || "自己紹介はまだありません。";
 });
 
+if (labelTextColorInput) {
+    labelTextColorInput.addEventListener("change", async () => {
+        await saveLabelColor("labelText", labelTextColorInput.value);
+    });
+}
+if (labelHeadingColorInput) {
+    labelHeadingColorInput.addEventListener("change", async () => {
+        await saveLabelColor("labelHeading", labelHeadingColorInput.value);
+    });
+}
+if (labelMutedColorInput) {
+    labelMutedColorInput.addEventListener("change", async () => {
+        await saveLabelColor("labelMuted", labelMutedColorInput.value);
+    });
+}
+if (resetLabelTextColorButton) {
+    resetLabelTextColorButton.addEventListener("click", async () => {
+        await resetLabelColor("labelText");
+    });
+}
+if (resetLabelHeadingColorButton) {
+    resetLabelHeadingColorButton.addEventListener("click", async () => {
+        await resetLabelColor("labelHeading");
+    });
+}
+if (resetLabelMutedColorButton) {
+    resetLabelMutedColorButton.addEventListener("click", async () => {
+        await resetLabelColor("labelMuted");
+    });
+}
+if (resetAllLabelColorsButton) {
+    resetAllLabelColorsButton.addEventListener("click", async () => {
+        await resetAllLabelColors();
+    });
+}
+
 async function loadProfile() {
     try {
         const user = await fetchJson("/api/me");
         renderProfile(user);
+        await loadLabelColors();
         await loadPointHistory();
     } catch (error) {
         profileMessage.style.color = "#be2f2f";
         profileMessage.textContent = error.message;
     }
+}
+
+async function loadLabelColors() {
+    const colors = await fetchJson("/api/me/label-colors");
+    applyLabelColors(colors);
+}
+
+async function saveLabelColor(labelKey, colorValue) {
+    try {
+        const colors = await fetchJson(`/api/me/label-colors/${encodeURIComponent(labelKey)}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ color: normalizeLabelColor(colorValue, labelKey) })
+        });
+        applyLabelColors(colors);
+        profileMessage.style.color = "#087057";
+        profileMessage.textContent = "ラベル色を保存しました。";
+    } catch (error) {
+        profileMessage.style.color = "#be2f2f";
+        profileMessage.textContent = error.message;
+    }
+}
+
+async function resetLabelColor(labelKey) {
+    try {
+        const colors = await fetchJson(`/api/me/label-colors/${encodeURIComponent(labelKey)}`, {
+            method: "DELETE"
+        });
+        applyLabelColors(colors);
+        profileMessage.style.color = "#087057";
+        profileMessage.textContent = "ラベル色を初期化しました。";
+    } catch (error) {
+        profileMessage.style.color = "#be2f2f";
+        profileMessage.textContent = error.message;
+    }
+}
+
+async function resetAllLabelColors() {
+    try {
+        const colors = await fetchJson("/api/me/label-colors", { method: "DELETE" });
+        applyLabelColors(colors);
+        profileMessage.style.color = "#087057";
+        profileMessage.textContent = "ラベル色をすべて初期化しました。";
+    } catch (error) {
+        profileMessage.style.color = "#be2f2f";
+        profileMessage.textContent = error.message;
+    }
+}
+
+function applyLabelColors(colors) {
+    const labelText = normalizeLabelColor(colors && colors.labelText, "labelText");
+    const labelHeading = normalizeLabelColor(colors && colors.labelHeading, "labelHeading");
+    const labelMuted = normalizeLabelColor(colors && colors.labelMuted, "labelMuted");
+
+    document.body.style.setProperty("--label-text-color", labelText);
+    document.body.style.setProperty("--label-heading-color", labelHeading);
+    document.body.style.setProperty("--label-muted-color", labelMuted);
+
+    if (labelTextColorInput) {
+        labelTextColorInput.value = labelText;
+    }
+    if (labelHeadingColorInput) {
+        labelHeadingColorInput.value = labelHeading;
+    }
+    if (labelMutedColorInput) {
+        labelMutedColorInput.value = labelMuted;
+    }
+}
+
+function normalizeLabelColor(value, labelKey) {
+    const normalized = String(value || "").trim().toUpperCase();
+    if (/^#[0-9A-F]{6}$/.test(normalized)) {
+        return normalized;
+    }
+    return LABEL_DEFAULTS[labelKey] || "#000000";
 }
 
 function renderProfile(user) {

@@ -7,6 +7,9 @@
     --line: #c5d5f2;
     --ink: #15213f;
     --muted: #445a86;
+    --label-text-color: #2b4e93;
+    --label-heading-color: #7d35d8;
+    --label-muted-color: #445a86;
     --accent: #42d9ff;
     --accent-soft: #1f3d67;
     --danger: #ff5e7a;
@@ -479,7 +482,7 @@ body::after {
 
 .friend-section h3 {
     margin: 0 0 10px;
-    color: #7d35d8;
+    color: var(--label-heading-color);
     text-shadow: 0 0 6px #d29bff, 0 0 12px #c25dff66;
 }
 
@@ -509,7 +512,7 @@ body::after {
 .friend-columns h4 {
     margin: 0 0 6px;
     font-size: 0.85rem;
-    color: #2f56a8;
+    color: var(--label-text-color);
     text-shadow: none;
 }
 
@@ -814,7 +817,7 @@ a.auth-link-button:active,
 }
 
 .schedule-form label {
-    color: #2b4e93;
+    color: var(--label-text-color);
     text-shadow: 0 0 4px #beddff;
 }
 
@@ -893,7 +896,7 @@ a.auth-link-button:active,
 
 .help-text {
     margin: 0 0 10px;
-    color: var(--muted);
+    color: var(--label-muted-color);
 }
 
 .level-progress-track {

@@ -3,6 +3,7 @@ package com.example.schedulemanager.controller;
 import com.example.schedulemanager.dto.ProfileUpdateRequest;
 import com.example.schedulemanager.model.AppUser;
 import com.example.schedulemanager.service.GamificationService;
+import com.example.schedulemanager.service.LabelColorService;
 import com.example.schedulemanager.service.UserAccountService;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -26,10 +27,15 @@ import org.springframework.web.multipart.MultipartFile;
 public class UserApiController {
     private final UserAccountService userAccountService;
     private final GamificationService gamificationService;
+    private final LabelColorService labelColorService;
 
-    public UserApiController(UserAccountService userAccountService, GamificationService gamificationService) {
+    public UserApiController(
+            UserAccountService userAccountService,
+            GamificationService gamificationService,
+            LabelColorService labelColorService) {
         this.userAccountService = userAccountService;
         this.gamificationService = gamificationService;
+        this.labelColorService = labelColorService;
     }
 
     @GetMapping
@@ -54,6 +60,36 @@ public class UserApiController {
     public List<Map<String, Object>> pointHistory(@AuthenticationPrincipal UserDetails userDetails) {
         AppUser user = userAccountService.getByUsername(userDetails.getUsername());
         return gamificationService.listPointHistories(user.getId());
+    }
+
+    @GetMapping("/label-colors")
+    public Map<String, String> labelColors(@AuthenticationPrincipal UserDetails userDetails) {
+        AppUser user = userAccountService.getByUsername(userDetails.getUsername());
+        return labelColorService.getResolvedColors(user.getId());
+    }
+
+    @PutMapping("/label-colors/{labelKey}")
+    public Map<String, String> saveLabelColor(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @org.springframework.web.bind.annotation.PathVariable("labelKey") String labelKey,
+            @RequestBody Map<String, String> request) {
+        AppUser user = userAccountService.getByUsername(userDetails.getUsername());
+        String color = request == null ? null : request.get("color");
+        return labelColorService.saveColor(user.getId(), labelKey, color);
+    }
+
+    @org.springframework.web.bind.annotation.DeleteMapping("/label-colors/{labelKey}")
+    public Map<String, String> resetLabelColor(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @org.springframework.web.bind.annotation.PathVariable("labelKey") String labelKey) {
+        AppUser user = userAccountService.getByUsername(userDetails.getUsername());
+        return labelColorService.resetOne(user.getId(), labelKey);
+    }
+
+    @org.springframework.web.bind.annotation.DeleteMapping("/label-colors")
+    public Map<String, String> resetAllLabelColors(@AuthenticationPrincipal UserDetails userDetails) {
+        AppUser user = userAccountService.getByUsername(userDetails.getUsername());
+        return labelColorService.resetAll(user.getId());
     }
     @GetMapping("/test-error")
 public String testError() {

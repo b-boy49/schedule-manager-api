@@ -6,7 +6,7 @@
     <title>フレンド | ゲーム予定</title>
     <link rel="stylesheet" href="/css/calendar.css">
 </head>
-<body>
+<body th:style="${labelColorStyle}">
 <header class="page-hero">
     <h1 th:text="${currentDisplayName + 'のフレンド'}"></h1>
     <nav class="hero-nav" aria-label="メインメニュー">
