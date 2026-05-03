@@ -1,5 +1,6 @@
 const app = document.querySelector(".app-shell");
 const currentUsername = app.dataset.currentUsername;
+const searchKeyword = (app.dataset.searchKeyword || "").trim();
 
 const threadForm = document.getElementById("threadForm");
 const threadGameTitleInput = document.getElementById("threadGameTitle");
@@ -73,7 +74,8 @@ postForm.addEventListener("submit", async (event) => {
 });
 
 async function loadThreads() {
-    const threads = await fetchJson("/api/board/threads");
+    const query = searchKeyword ? `?keyword=${encodeURIComponent(searchKeyword)}` : "";
+    const threads = await fetchJson(`/api/board/threads${query}`);
     threadList.innerHTML = "";
 
     if (!Array.isArray(threads) || threads.length === 0) {
@@ -171,7 +173,22 @@ async function fetchJson(url, options = {}) {
 }
 
 async function initializeBoard() {
+    bindThreadOpenButtons();
     await loadThreads();
 }
 
 initializeBoard();
+
+function bindThreadOpenButtons() {
+    const buttons = threadList.querySelectorAll("button[data-thread-id]");
+    buttons.forEach((button) => {
+        button.addEventListener("click", async () => {
+            const threadId = Number(button.dataset.threadId);
+            const threadTitle = button.dataset.threadTitle || "";
+            if (!Number.isFinite(threadId)) {
+                return;
+            }
+            await selectThread(threadId, threadTitle);
+        });
+    });
+}

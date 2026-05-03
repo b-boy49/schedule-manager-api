@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -27,8 +28,8 @@ public class BoardApiController {
     }
 
     @GetMapping("/threads")
-    public List<BoardThread> listThreads() {
-        return boardService.listThreads();
+    public List<BoardThread> listThreads(@RequestParam(value = "keyword", required = false) String keyword) {
+        return boardService.listThreads(keyword);
     }
 
     @PostMapping("/threads")

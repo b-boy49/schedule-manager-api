@@ -5,6 +5,8 @@ import com.example.schedulemanager.dto.ProfileUpdateRequest;
 import com.example.schedulemanager.mapper.UserMapper;
 import com.example.schedulemanager.model.AppUser;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -98,6 +100,8 @@ public class UserAccountService {
                 request.getDisplayName(),
                 request.getEmail(),
                 request.getProfileBio(),
+                request.getXUrl(),
+                request.getStreamUrl(),
                 request.getProfileIconColor(),
                 null,
                 false);
@@ -109,6 +113,8 @@ public class UserAccountService {
             String displayNameValue,
             String emailValue,
             String profileBioValue,
+            String xUrlValue,
+            String streamUrlValue,
             String profileIconColorValue,
             MultipartFile profileImageFile,
             boolean removeProfileImage) {
@@ -120,6 +126,8 @@ public class UserAccountService {
         String displayName = normalize(displayNameValue);
         String email = normalizeEmail(emailValue);
         String profileBio = normalize(profileBioValue);
+        String xUrl = normalizeUrl(xUrlValue, "X URL");
+        String streamUrl = normalizeUrl(streamUrlValue, "配信先URL");
         String profileIconColor = normalizeProfileIconColor(profileIconColorValue);
         if (profileIconColor == null) {
             profileIconColor = normalizeProfileIconColor(user.getProfileIconColor());
@@ -154,6 +162,8 @@ public class UserAccountService {
         user.setDisplayName(displayName);
         user.setEmail(email);
         user.setProfileBio(profileBio);
+        user.setXUrl(xUrl);
+        user.setStreamUrl(streamUrl);
         user.setProfileIconColor(profileIconColor);
 
         if (removeProfileImage) {
@@ -258,5 +268,30 @@ public class UserAccountService {
         if (!email.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
             throw new IllegalArgumentException("メールアドレスの形式が正しくありません。");
         }
+    }
+
+    private String normalizeUrl(String value, String fieldLabel) {
+        String normalized = normalize(value);
+        if (normalized == null || normalized.isBlank()) {
+            return null;
+        }
+        if (normalized.length() > 1000) {
+            throw new IllegalArgumentException(fieldLabel + "は1000文字以内で入力してください。");
+        }
+        try {
+            URI uri = new URI(normalized);
+            String scheme = uri.getScheme();
+            String host = uri.getHost();
+            if (scheme == null || host == null) {
+                throw new IllegalArgumentException(fieldLabel + "はURL形式で入力してください。");
+            }
+            String lowerScheme = scheme.toLowerCase(Locale.ROOT);
+            if (!"http".equals(lowerScheme) && !"https".equals(lowerScheme)) {
+                throw new IllegalArgumentException(fieldLabel + "はhttp/httpsのみ対応しています。");
+            }
+        } catch (URISyntaxException ex) {
+            throw new IllegalArgumentException(fieldLabel + "はURL形式で入力してください。");
+        }
+        return normalized;
     }
 }

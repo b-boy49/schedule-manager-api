@@ -1,6 +1,8 @@
 const profileForm = document.getElementById("profileForm");
 const displayNameInput = document.getElementById("profileDisplayName");
 const emailInput = document.getElementById("profileEmail");
+const xUrlInput = document.getElementById("profileXUrl");
+const streamUrlInput = document.getElementById("profileStreamUrl");
 const imageFileInput = document.getElementById("profileImageFile");
 const removeProfileImageInput = document.getElementById("removeProfileImage");
 const profileIconColorInput = document.getElementById("profileIconColor");
@@ -42,6 +44,8 @@ profileForm.addEventListener("submit", async (event) => {
     formData.append("displayName", displayNameInput.value);
     formData.append("email", emailInput.value || "");
     formData.append("profileBio", bioInput.value || "");
+    formData.append("xUrl", xUrlInput.value || "");
+    formData.append("streamUrl", streamUrlInput.value || "");
     formData.append("profileIconColor", normalizeColorValue(profileIconColorInput.value));
     formData.append("removeProfileImage", removeProfileImageInput.checked ? "true" : "false");
     if (imageFileInput.files && imageFileInput.files[0]) {
@@ -228,6 +232,8 @@ function renderProfile(user) {
     displayNameInput.value = user.displayName || "";
     emailInput.value = user.email || "";
     bioInput.value = user.profileBio || "";
+    xUrlInput.value = user.xUrl || "";
+    streamUrlInput.value = user.streamUrl || "";
     state.profileImageUrl = user.profileImageUrl || "";
     state.profileIconColor = normalizeColorValue(user.profileIconColor || DEFAULT_PROFILE_ICON_COLOR);
     profileIconColorInput.value = state.profileIconColor;

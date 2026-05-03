@@ -6,6 +6,8 @@ CREATE TABLE IF NOT EXISTS app_user (
     total_points INTEGER NOT NULL DEFAULT 0,
     display_name VARCHAR(100) NOT NULL,
     profile_bio VARCHAR(500),
+    x_url VARCHAR(1000),
+    stream_url VARCHAR(1000),
     profile_image_url VARCHAR(1000),
     profile_icon_color VARCHAR(7),
     profile_image_data BLOB,
@@ -118,6 +120,8 @@ ALTER TABLE schedule_item ADD COLUMN IF NOT EXISTS shared_with_friends BOOLEAN N
 ALTER TABLE schedule_item ADD COLUMN IF NOT EXISTS joinable BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE schedule_item ADD COLUMN IF NOT EXISTS recruitment_limit INTEGER;
 ALTER TABLE app_user ADD COLUMN IF NOT EXISTS profile_bio VARCHAR(500);
+ALTER TABLE app_user ADD COLUMN IF NOT EXISTS x_url VARCHAR(1000);
+ALTER TABLE app_user ADD COLUMN IF NOT EXISTS stream_url VARCHAR(1000);
 ALTER TABLE app_user ADD COLUMN IF NOT EXISTS email VARCHAR(254);
 ALTER TABLE app_user ADD COLUMN IF NOT EXISTS total_points INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE app_user ADD COLUMN IF NOT EXISTS profile_image_url VARCHAR(1000);

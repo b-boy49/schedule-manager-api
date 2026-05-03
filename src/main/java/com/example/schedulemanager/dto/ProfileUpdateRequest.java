@@ -4,6 +4,8 @@ public class ProfileUpdateRequest {
     private String displayName;
     private String email;
     private String profileBio;
+    private String xUrl;
+    private String streamUrl;
     private String profileIconColor;
 
     public String getDisplayName() {
@@ -28,6 +30,22 @@ public class ProfileUpdateRequest {
 
     public void setProfileBio(String profileBio) {
         this.profileBio = profileBio;
+    }
+
+    public String getXUrl() {
+        return xUrl;
+    }
+
+    public void setXUrl(String xUrl) {
+        this.xUrl = xUrl;
+    }
+
+    public String getStreamUrl() {
+        return streamUrl;
+    }
+
+    public void setStreamUrl(String streamUrl) {
+        this.streamUrl = streamUrl;
     }
 
     public String getProfileIconColor() {

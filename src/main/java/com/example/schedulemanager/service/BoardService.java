@@ -27,7 +27,12 @@ public class BoardService {
 
     @Transactional(readOnly = true)
     public List<BoardThread> listThreads() {
-        return boardMapper.findAllThreads();
+        return listThreads(null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<BoardThread> listThreads(String keyword) {
+        return boardMapper.findAllThreads(normalize(keyword));
     }
 
     @Transactional(readOnly = true)

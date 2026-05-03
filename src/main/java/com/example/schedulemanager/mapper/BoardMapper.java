@@ -21,6 +21,7 @@ public interface BoardMapper {
     int insertThread(BoardThread thread);
 
     @Select("""
+            <script>
             SELECT bt.id, bt.owner_user_id, u.username AS owner_username, u.display_name AS owner_display_name,
                    bt.game_title, bt.created_at, bt.updated_at,
                    COALESCE(COUNT(bp.id), 0) AS post_count,
@@ -28,10 +29,16 @@ public interface BoardMapper {
             FROM board_thread bt
             JOIN app_user u ON u.id = bt.owner_user_id
             LEFT JOIN board_post bp ON bp.thread_id = bt.id
+            <where>
+                <if test="keyword != null and keyword != ''">
+                    bt.game_title LIKE CONCAT('%', #{keyword}, '%')
+                </if>
+            </where>
             GROUP BY bt.id, bt.owner_user_id, u.username, u.display_name, bt.game_title, bt.created_at, bt.updated_at
             ORDER BY latest_post_at DESC, bt.id DESC
+            </script>
             """)
-    List<BoardThread> findAllThreads();
+    List<BoardThread> findAllThreads(@Param("keyword") String keyword);
 
     @Select("""
             SELECT id, owner_user_id, game_title, created_at, updated_at

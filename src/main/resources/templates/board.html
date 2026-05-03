@@ -18,7 +18,7 @@
 </header>
 
 <main class="app-shell friends-shell"
-      th:attr="data-current-username=${currentUsername},data-current-display-name=${currentDisplayName}">
+      th:attr="data-current-username=${currentUsername},data-current-display-name=${currentDisplayName},data-search-keyword=${keyword}">
     <section class="schedule-pane">
         <header>
             <h2>ゲーム募集掲示板</h2>
@@ -38,7 +38,20 @@
 
         <section class="friend-section">
             <h3>スレッド一覧</h3>
-            <ul id="threadList" class="mini-list"></ul>
+            <form method="get" action="/board" class="inline-form" style="margin-bottom:10px;">
+                <input type="text" name="keyword" placeholder="タイトルで検索" th:value="${keyword}">
+                <button type="submit" class="secondary">検索</button>
+                <a href="/board" class="secondary auth-link-button" style="width:auto;min-width:84px;margin-top:0;">クリア</a>
+            </form>
+            <p class="help-text" th:text="'検索結果: ' + ${threadSearchResultCount} + '件'"></p>
+            <ul id="threadList" class="mini-list">
+                <li th:if="${#lists.isEmpty(threads)}">スレッドはありません。</li>
+                <li th:each="thread : ${threads}">
+                    <span th:text="${thread.gameTitle + ' | 作成者: ' + (thread.ownerDisplayName != null ? thread.ownerDisplayName : thread.ownerUsername) + ' | 投稿: ' + thread.postCount + '件'}"></span>
+                    <button type="button" class="secondary"
+                            th:attr="data-thread-id=${thread.id},data-thread-title=${thread.gameTitle}">開く</button>
+                </li>
+            </ul>
         </section>
 
         <section class="friend-section">

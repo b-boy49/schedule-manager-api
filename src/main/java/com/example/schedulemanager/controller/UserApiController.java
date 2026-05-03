@@ -110,6 +110,8 @@ public String testError() {
             @RequestParam("displayName") String displayName,
             @RequestParam(value = "email", required = false) String email,
             @RequestParam(value = "profileBio", required = false) String profileBio,
+            @RequestParam(value = "xUrl", required = false) String xUrl,
+            @RequestParam(value = "streamUrl", required = false) String streamUrl,
             @RequestParam(value = "profileIconColor", required = false) String profileIconColor,
             @RequestParam(value = "removeProfileImage", defaultValue = "false") boolean removeProfileImage,
             @RequestPart(value = "profileImageFile", required = false) MultipartFile profileImageFile) {
@@ -118,6 +120,8 @@ public String testError() {
                 displayName,
                 email,
                 profileBio,
+                xUrl,
+                streamUrl,
                 profileIconColor,
                 profileImageFile,
                 removeProfileImage);
@@ -141,6 +145,8 @@ public String testError() {
         response.put("displayName", user.getDisplayName());
         response.put("email", user.getEmail() == null ? "" : user.getEmail());
         response.put("profileBio", user.getProfileBio() == null ? "" : user.getProfileBio());
+        response.put("xUrl", user.getXUrl() == null ? "" : user.getXUrl());
+        response.put("streamUrl", user.getStreamUrl() == null ? "" : user.getStreamUrl());
         response.put("profileImageUrl", profileImageUrl);
         response.put("profileIconColor", profileIconColor);
         response.putAll(gamificationService.buildUserProgressSummary(user.getId()));

@@ -11,7 +11,7 @@ import org.apache.ibatis.annotations.Update;
 public interface UserMapper {
 
     @Select("""
-            SELECT id, username, password_hash, email, total_points, display_name, profile_bio, profile_image_url, profile_icon_color,
+            SELECT id, username, password_hash, email, total_points, display_name, profile_bio, x_url, stream_url, profile_image_url, profile_icon_color,
                    profile_image_data, profile_image_content_type, enabled, created_at
             FROM app_user
             WHERE username = #{username}
@@ -19,7 +19,7 @@ public interface UserMapper {
     AppUser findByUsername(String username);
 
     @Select("""
-            SELECT id, username, password_hash, email, total_points, display_name, profile_bio, profile_image_url, profile_icon_color,
+            SELECT id, username, password_hash, email, total_points, display_name, profile_bio, x_url, stream_url, profile_image_url, profile_icon_color,
                    profile_image_data, profile_image_content_type, enabled, created_at
             FROM app_user
             WHERE id = #{id}
@@ -27,7 +27,7 @@ public interface UserMapper {
     AppUser findById(Long id);
 
     @Select("""
-            SELECT id, username, password_hash, email, total_points, display_name, profile_bio, profile_image_url, profile_icon_color,
+            SELECT id, username, password_hash, email, total_points, display_name, profile_bio, x_url, stream_url, profile_image_url, profile_icon_color,
                    profile_image_data, profile_image_content_type, enabled, created_at
             FROM app_user
             WHERE email = #{email}
@@ -35,7 +35,7 @@ public interface UserMapper {
     AppUser findByEmail(String email);
 
     @Select("""
-            SELECT id, username, password_hash, email, total_points, display_name, profile_bio, profile_image_url, profile_icon_color,
+            SELECT id, username, password_hash, email, total_points, display_name, profile_bio, x_url, stream_url, profile_image_url, profile_icon_color,
                    profile_image_data, profile_image_content_type, enabled, created_at
             FROM app_user
             WHERE enabled = TRUE
@@ -47,11 +47,11 @@ public interface UserMapper {
 
     @Insert("""
             INSERT INTO app_user (
-                username, password_hash, email, total_points, display_name, profile_bio, profile_image_url, profile_icon_color,
+                username, password_hash, email, total_points, display_name, profile_bio, x_url, stream_url, profile_image_url, profile_icon_color,
                 profile_image_data, profile_image_content_type, enabled
             )
             VALUES (
-                #{username}, #{passwordHash}, #{email}, #{totalPoints}, #{displayName}, #{profileBio}, #{profileImageUrl}, #{profileIconColor},
+                #{username}, #{passwordHash}, #{email}, #{totalPoints}, #{displayName}, #{profileBio}, #{xUrl}, #{streamUrl}, #{profileImageUrl}, #{profileIconColor},
                 #{profileImageData}, #{profileImageContentType}, #{enabled}
             )
             """)
@@ -63,6 +63,8 @@ public interface UserMapper {
             SET display_name = #{displayName},
                 email = #{email},
                 profile_bio = #{profileBio},
+                x_url = #{xUrl},
+                stream_url = #{streamUrl},
                 profile_image_url = #{profileImageUrl},
                 profile_icon_color = #{profileIconColor},
                 profile_image_data = #{profileImageData},
