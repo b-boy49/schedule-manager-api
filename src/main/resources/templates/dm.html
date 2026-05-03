@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DM | ゲーム予定</title>
+    <link rel="stylesheet" href="/css/calendar.css">
+</head>
+<body th:style="${labelColorStyle}">
+<header class="page-hero">
+    <h1 th:text="${currentDisplayName + 'のDM'}"></h1>
+    <nav class="hero-nav" aria-label="メインメニュー">
+        <a href="/calendar">トップ</a>
+        <a href="/board">募集掲示板</a>
+        <a href="/friends">フレンド</a>
+        <a href="/profile">ユーザー編集</a>
+        <a href="/dm" aria-current="page">✉ DM</a>
+    </nav>
+</header>
+
+<main class="app-shell friends-shell"
+      th:attr="data-current-username=${currentUsername},data-current-display-name=${currentDisplayName}">
+    <section class="schedule-pane">
+        <header>
+            <h2>ダイレクトメッセージ</h2>
+            <form method="post" action="/logout">
+                <button type="submit" class="secondary">ログアウト</button>
+            </form>
+        </header>
+
+        <section class="friend-section">
+            <h3>会話開始</h3>
+            <form id="startConversationForm" class="inline-form">
+                <select id="partnerUserId" required></select>
+                <button type="submit" class="primary">会話を開く</button>
+            </form>
+            <p id="dmMessage" class="form-message" aria-live="polite"></p>
+        </section>
+
+        <section class="friend-section">
+            <h3>受信・送信一覧</h3>
+            <ul id="conversationList" class="mini-list"></ul>
+        </section>
+
+        <section class="friend-section">
+            <h3 id="conversationTitle">会話を選択してください</h3>
+            <form id="sendMessageForm" class="schedule-form">
+                <label for="messageBody">本文</label>
+                <textarea id="messageBody" rows="4" maxlength="1000" placeholder="メッセージを入力" required></textarea>
+                <div class="form-actions">
+                    <button id="sendButton" type="submit" class="primary" disabled>送信</button>
+                </div>
+            </form>
+            <ul id="messageList" class="mini-list"></ul>
+        </section>
+    </section>
+</main>
+
+<script src="/js/theme.js"></script>
+<script src="/js/dm.js"></script>
+</body>
+</html>

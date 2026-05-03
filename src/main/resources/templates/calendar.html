@@ -1,183 +1,180 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja" xmlns:th="http://www.thymeleaf.org">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ゲーム予定</title>
     <link rel="stylesheet" href="/css/calendar.css">
 </head>
-
 <body th:style="${labelColorStyle}">
-    <header class="page-hero">
-        <h1 th:text="${currentDisplayName + 'のゲームスケジュール'}"></h1>
-        <nav class="hero-nav" aria-label="メインメニュー">
-            <a href="/calendar">トップ</a>
-            <a href="/board">募集掲示板</a>
-            <a href="/friends">フレンド</a>
-            <a href="/profile">ユーザー編集</a>
-            <a href="#messageSection">メッセージ</a>
-        </nav>
-    </header>
-    <main class="app-shell"
-        th:attr="data-today=${today},data-current-username=${currentUsername},data-current-display-name=${currentDisplayName}">
-        <section class="calendar-pane">
-            <header class="calendar-header">
-                <div>
-                    <h1>ゲーム予定</h1>
-                    <p class="user-badge" th:text="${currentDisplayName + ' (@' + currentUsername + ')'}"></p>
-                </div>
-                <div class="month-switch">
-                    <button id="prevMonth" type="button" aria-label="前の月">◀</button>
-                    <h2 id="monthLabel"></h2>
-                    <button id="nextMonth" type="button" aria-label="次の月">▶</button>
-                </div>
-            </header>
-            <div class="weekdays" id="weekdays"></div>
-            <div class="calendar-grid" id="calendarGrid"></div>
+<header class="page-hero">
+    <h1 th:text="${currentDisplayName + 'のゲームスケジュール'}"></h1>
+    <nav class="hero-nav" aria-label="メインメニュー">
+        <a href="/calendar">トップ</a>
+        <a href="/board">募集掲示板</a>
+        <a href="/friends">フレンド</a>
+        <a href="/profile">ユーザー編集</a>
+        <a href="/dm">✉ DM</a>
+        <a href="#messageSection">メッセージ</a>
+    </nav>
+</header>
+<main class="app-shell" th:attr="data-today=${today},data-current-username=${currentUsername},data-current-display-name=${currentDisplayName}">
+    <section class="calendar-pane">
+        <header class="calendar-header">
+            <div>
+                <h1>ゲーム予定</h1>
+                <p class="user-badge" th:text="${currentDisplayName + ' (@' + currentUsername + ')'}"></p>
+            </div>
+            <div class="month-switch">
+                <button id="prevMonth" type="button" aria-label="前の月"></button>
+                <h2 id="monthLabel"></h2>
+                <button id="nextMonth" type="button" aria-label="次の月"></button>
+            </div>
+        </header>
+        <div class="weekdays" id="weekdays"></div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+    </section>
+
+    <section class="schedule-pane">
+        <header>
+            <h2 id="selectedDateLabel"></h2>
+            <div class="header-actions">
+                <button id="newScheduleButton" type="button">+ 新しい予定</button>
+                <form method="post" action="/logout">
+                    <button type="submit" class="secondary">ログアウト</button>
+                </form>
+            </div>
+        </header>
+
+        <section id="messageSection" class="friend-section message-section">
+            <h3>メッセージ</h3>
+            <p class="help-text">メッセージ機能は準備中です。</p>
         </section>
 
-        <section class="schedule-pane">
-            <header>
-                <h2 id="selectedDateLabel"></h2>
-                <div class="header-actions">
-                    <button id="newScheduleButton" type="button">+ 新しい予定</button>
-                    <form method="post" action="/logout">
-                        <button type="submit" class="secondary">ログアウト</button>
-                    </form>
-                </div>
-            </header>
+        <section class="friend-section">
+            <h3>通知設定</h3>
+            <div class="form-actions">
+                <button id="notificationPermissionButton" type="button" class="secondary">通知を許可</button>
+            </div>
+            <label class="inline-check">
+                <input id="notificationEnabled" type="checkbox">
+                デスクトップ通知を有効にする
+            </label>
+            <label for="notificationIntervalMinutes">チェック間隔（分）</label>
+            <input id="notificationIntervalMinutes" type="number" min="1" max="60" step="1" value="5">
+            <p id="notificationStatus" class="help-text"></p>
+        </section>
 
-            <section id="messageSection" class="friend-section message-section">
-                <h3>メッセージ</h3>
-                <p class="help-text">メッセージ機能は準備中です。</p>
-            </section>
-
-            <section class="friend-section">
-                <h3>通知設定</h3>
+        <section class="friend-section">
+            <h3>CSV Import</h3>
+            <form id="csvImportForm" class="schedule-form" enctype="multipart/form-data">
+                <label for="csvImportFile">CSV file</label>
+                <input id="csvImportFile" name="file" type="file" accept=".csv,text/csv" required>
                 <div class="form-actions">
-                    <button id="notificationPermissionButton" type="button" class="secondary">通知を許可</button>
-                </div>
-                <label class="inline-check">
-                    <input id="notificationEnabled" type="checkbox">
-                    デスクトップ通知を有効にする
-                </label>
-                <label for="notificationIntervalMinutes">チェック間隔（分）</label>
-                <input id="notificationIntervalMinutes" type="number" min="1" max="60" step="1" value="5">
-                <p id="notificationStatus" class="help-text"></p>
-            </section>
-
-            <section class="friend-section">
-                <h3>CSV Import</h3>
-                <form id="csvImportForm" class="schedule-form" enctype="multipart/form-data">
-                    <label for="csvImportFile">CSV file</label>
-                    <input id="csvImportFile" name="file" type="file" accept=".csv,text/csv" required>
-                    <div class="form-actions">
-                        <button type="submit" class="primary">Import</button>
-                        <a href="/api/schedules/template" class="secondary auth-link-button csv-template-link">Template CSV</a>
-                    </div>
-                </form>
-                <p id="csvImportMessage" class="form-message" aria-live="polite"></p>
-            </section>
-
-            <ul id="scheduleList" class="schedule-list"></ul>
-
-            <form id="scheduleForm" class="schedule-form">
-                <h3 id="formTitle">予定の追加</h3>
-                <input id="scheduleId" type="hidden">
-
-                <label for="scheduleDate">日付</label>
-                <input id="scheduleDate" name="scheduleDate" type="date" required>
-
-                <label for="title">ゲーム名</label>
-                <div class="title-voice-row">
-                    <input id="title" name="title" type="text" maxlength="200" list="titleSuggestions" required>
-                    <button id="voiceInputButton" type="button" class="secondary voice-mic-button" hidden aria-label="タイトルを音声入力" title="タイトルを音声入力">🎤</button>
-                </div>
-                <p id="voiceInterimPreview" class="help-text voice-preview"></p>
-                <datalist id="titleSuggestions"></datalist>
-
-                <label for="priority">優先度</label>
-                <select id="priority" name="priority">
-                    <option value="LOW">LOW（通常）</option>
-                    <option value="MEDIUM">MEDIUM（やや高）</option>
-                    <option value="HIGH">HIGH（高）</option>
-                </select>
-
-                <label for="deviceType">デバイス</label>
-                <select id="deviceType" name="deviceType">
-                    <option value="PC">PC</option>
-                    <option value="CONSOLE">家庭用ゲーム機</option>
-                </select>
-
-                <label for="rankBand">ランク帯</label>
-                <input id="rankBand" name="rankBand" type="text" maxlength="100" placeholder="任意">
-                <label for="startTime">開始時刻</label>
-                <input id="startTime" name="startTime" type="time">
-
-                <label for="endTime">終了時刻</label>
-                <input id="endTime" name="endTime" type="time">
-
-                <label for="description">メモ</label>
-                <div class="title-voice-row">
-                    <textarea id="description" name="description" rows="4" maxlength="1000"></textarea>
-                    <button id="descriptionVoiceInputButton" type="button" class="secondary voice-mic-button" hidden aria-label="メモを音声入力" title="メモを音声入力">🎤</button>
-                </div>
-                <p id="descriptionVoiceInterimPreview" class="help-text voice-preview"></p>
-
-                <label class="inline-check">
-                    <input id="sharedWithFriends" name="sharedWithFriends" type="checkbox">
-                    フレンドにこの予定を共有する
-                </label>
-
-                <label class="inline-check">
-                    <input id="joinable" name="joinable" type="checkbox">
-                    参加募集にする（フレンドが参加可能）
-                </label>
-
-                <section id="friendShareScopeSection" class="friend-share-scope" hidden>
-                    <p class="friend-share-title">公開範囲</p>
-                    <label class="inline-check">
-                        <input id="friendShareScopeAll" name="friendShareScope" type="radio" value="ALL" checked>
-                        1. フレンド全員に公開
-                    </label>
-                    <label class="inline-check">
-                        <input id="friendShareScopeSelected" name="friendShareScope" type="radio" value="SELECTED">
-                        2. 公開するフレンドを選択
-                    </label>
-                    <button id="openFriendSharePickerButton" type="button" class="secondary" hidden>公開するフレンドを選ぶ</button>
-                    <p id="friendShareSelectionSummary" class="help-text" hidden></p>
-                </section>
-
-                <label class="inline-check">
-                    <input id="messageShareable" name="messageShareable" type="checkbox">
-                    この募集メッセージの再シェアを許可する
-                </label>
-
-                <label for="recruitmentLimit">募集人数（あと何人参加できるか）</label>
-                <input id="recruitmentLimit" name="recruitmentLimit" type="number" min="1" step="1" placeholder="例: 3">
-
-                <p id="formMessage" class="form-message" aria-live="polite"></p>
-
-                <div class="form-actions">
-                    <button type="submit" class="primary">保存</button>
-                    <button id="cancelEditButton" type="button" class="secondary">編集をキャンセル</button>
+                    <button type="submit" class="primary">Import</button>
+                    <a href="/api/schedules/template" class="secondary auth-link-button csv-template-link">Template CSV</a>
                 </div>
             </form>
-
-            <section id="friendSharePickerScreen" class="friend-section friend-share-picker-screen" hidden>
-                <h3>公開するフレンドを選択</h3>
-                <p class="help-text">複数人選択できます。</p>
-                <ul id="friendSharePickerList" class="mini-list"></ul>
-                <div class="form-actions">
-                    <button id="friendSharePickerApplyButton" type="button" class="primary">選択を反映</button>
-                    <button id="friendSharePickerCancelButton" type="button" class="secondary">戻る</button>
-                </div>
-            </section>
+            <p id="csvImportMessage" class="form-message" aria-live="polite"></p>
         </section>
-    </main>
-    <script src="/js/theme.js"></script>
-    <script src="/js/calendar.js"></script>
-</body>
 
+        <ul id="scheduleList" class="schedule-list"></ul>
+
+        <form id="scheduleForm" class="schedule-form">
+            <h3 id="formTitle">予定を登録</h3>
+            <input id="scheduleId" type="hidden">
+
+            <label for="scheduleDate">日付</label>
+            <input id="scheduleDate" name="scheduleDate" type="date" required>
+
+            <label for="title">ゲーム名</label>
+            <div class="title-voice-row">
+                <input id="title" name="title" type="text" maxlength="200" list="titleSuggestions" required>
+                <button id="voiceInputButton" type="button" class="secondary voice-mic-button" hidden aria-label="タイトル音声入力" title="タイトル音声入力">🎤</button>
+            </div>
+            <p id="voiceInterimPreview" class="help-text voice-preview"></p>
+            <datalist id="titleSuggestions"></datalist>
+
+            <label for="priority">優先度</label>
+            <select id="priority" name="priority">
+                <option value="LOW">LOW（通常）</option>
+                <option value="MEDIUM">MEDIUM（やや高）</option>
+                <option value="HIGH">HIGH（高）</option>
+            </select>
+
+            <label for="deviceType">デバイス</label>
+            <select id="deviceType" name="deviceType">
+                <option value="PC">PC</option>
+                <option value="CONSOLE">家庭用ゲーム機</option>
+            </select>
+
+            <label for="rankBand">ランク帯</label>
+            <input id="rankBand" name="rankBand" type="text" maxlength="100" placeholder="例: ゴールド">
+            <label for="startTime">開始時刻</label>
+            <input id="startTime" name="startTime" type="time">
+
+            <label for="endTime">終了時刻</label>
+            <input id="endTime" name="endTime" type="time">
+
+            <label for="description">メモ</label>
+            <div class="title-voice-row">
+                <textarea id="description" name="description" rows="4" maxlength="1000"></textarea>
+                <button id="descriptionVoiceInputButton" type="button" class="secondary voice-mic-button" hidden aria-label="メモ音声入力" title="メモ音声入力">🎤</button>
+            </div>
+            <p id="descriptionVoiceInterimPreview" class="help-text voice-preview"></p>
+
+            <label class="inline-check">
+                <input id="sharedWithFriends" name="sharedWithFriends" type="checkbox">
+                フレンドにこの予定を共有する
+            </label>
+
+            <label class="inline-check">
+                <input id="joinable" name="joinable" type="checkbox">
+                参加募集にする（フレンドが参加可能）
+            </label>
+
+            <section id="friendShareScopeSection" class="friend-share-scope" hidden>
+                <p class="friend-share-title">公開範囲</p>
+                <label class="inline-check">
+                    <input id="friendShareScopeAll" name="friendShareScope" type="radio" value="ALL" checked>
+                    1. フレンド全員に公開
+                </label>
+                <label class="inline-check">
+                    <input id="friendShareScopeSelected" name="friendShareScope" type="radio" value="SELECTED">
+                    2. 公開するフレンドを選択
+                </label>
+                <button id="openFriendSharePickerButton" type="button" class="secondary" hidden>公開するフレンドを選ぶ</button>
+                <p id="friendShareSelectionSummary" class="help-text" hidden></p>
+            </section>
+
+            <label class="inline-check">
+                <input id="messageShareable" name="messageShareable" type="checkbox">
+                この募集メッセージの共有を許可する
+            </label>
+
+            <label for="recruitmentLimit">募集人数（あと何人参加できるか）</label>
+            <input id="recruitmentLimit" name="recruitmentLimit" type="number" min="1" step="1" placeholder="例: 3">
+
+            <p id="formMessage" class="form-message" aria-live="polite"></p>
+
+            <div class="form-actions">
+                <button type="submit" class="primary">保存</button>
+                <button id="cancelEditButton" type="button" class="secondary">編集をキャンセル</button>
+            </div>
+        </form>
+
+        <section id="friendSharePickerScreen" class="friend-section friend-share-picker-screen" hidden>
+            <h3>公開するフレンドを選択</h3>
+            <p class="help-text">複数人を選択できます。</p>
+            <ul id="friendSharePickerList" class="mini-list"></ul>
+            <div class="form-actions">
+                <button id="friendSharePickerApplyButton" type="button" class="primary">選択を反映</button>
+                <button id="friendSharePickerCancelButton" type="button" class="secondary">戻る</button>
+            </div>
+        </section>
+    </section>
+</main>
+<script src="/js/theme.js"></script>
+<script src="/js/calendar.js"></script>
+</body>
 </html>

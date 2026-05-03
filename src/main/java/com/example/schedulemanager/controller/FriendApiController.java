@@ -1,10 +1,14 @@
 package com.example.schedulemanager.controller;
 
 import com.example.schedulemanager.dto.FriendRequestCreateRequest;
+import com.example.schedulemanager.dto.DirectMessageSendRequest;
 import com.example.schedulemanager.model.AppUser;
+import com.example.schedulemanager.model.DirectMessage;
+import com.example.schedulemanager.service.DirectMessageService;
 import com.example.schedulemanager.service.FriendshipService;
 import com.example.schedulemanager.service.GamificationService;
 import com.example.schedulemanager.service.UserAccountService;
+import java.util.List;
 import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -23,14 +27,17 @@ public class FriendApiController {
     private final FriendshipService friendshipService;
     private final UserAccountService userAccountService;
     private final GamificationService gamificationService;
+    private final DirectMessageService directMessageService;
 
     public FriendApiController(
             FriendshipService friendshipService,
             UserAccountService userAccountService,
-            GamificationService gamificationService) {
+            GamificationService gamificationService,
+            DirectMessageService directMessageService) {
         this.friendshipService = friendshipService;
         this.userAccountService = userAccountService;
         this.gamificationService = gamificationService;
+        this.directMessageService = directMessageService;
     }
 
     @GetMapping
@@ -40,7 +47,8 @@ public class FriendApiController {
                 "friends", friendshipService.listFriends(user.getId()),
                 "incomingRequests", friendshipService.listIncomingPending(user.getId()),
                 "outgoingRequests", friendshipService.listOutgoingPending(user.getId()),
-                "taskRanking", gamificationService.buildTaskCompletionRanking(user.getId(), "all"));
+                "taskRanking", gamificationService.buildTaskCompletionRanking(user.getId(), "all"),
+                "messages", directMessageService.listRecentMessages(user.getId(), 100));
     }
 
     @GetMapping("/ranking")
@@ -67,5 +75,22 @@ public class FriendApiController {
         AppUser user = userAccountService.getByUsername(userDetails.getUsername());
         friendshipService.acceptRequest(user.getId(), requestId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/messages")
+    public List<DirectMessage> listMessages(
+            @RequestParam(value = "limit", defaultValue = "100") Integer limit,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        AppUser user = userAccountService.getByUsername(userDetails.getUsername());
+        directMessageService.markReceivedAsRead(user.getId());
+        return directMessageService.listRecentMessages(user.getId(), limit == null ? 100 : limit);
+    }
+
+    @PostMapping("/messages")
+    public DirectMessage sendMessage(
+            @RequestBody DirectMessageSendRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        AppUser user = userAccountService.getByUsername(userDetails.getUsername());
+        return directMessageService.send(user.getId(), request);
     }
 }

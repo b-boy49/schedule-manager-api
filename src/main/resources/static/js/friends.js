@@ -1,3 +1,6 @@
+﻿const app = document.querySelector(".app-shell");
+const currentUsername = app?.dataset?.currentUsername || "";
+
 const friendRequestForm = document.getElementById("friendRequestForm");
 const friendUsernameInput = document.getElementById("friendUsername");
 const friendMessage = document.getElementById("friendMessage");
@@ -6,8 +9,13 @@ const incomingRequestList = document.getElementById("incomingRequestList");
 const outgoingRequestList = document.getElementById("outgoingRequestList");
 const levelRankingList = document.getElementById("levelRankingList");
 const rankingTabs = Array.from(document.querySelectorAll(".ranking-tab"));
+const directMessageForm = document.getElementById("directMessageForm");
+const messageRecipientSelect = document.getElementById("messageRecipient");
+const messageBodyInput = document.getElementById("messageBody");
+const directMessageList = document.getElementById("directMessageList");
 
 let currentRankingPeriod = "week";
+let currentFriends = [];
 
 friendRequestForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -39,9 +47,36 @@ rankingTabs.forEach((tab) => {
     });
 });
 
+if (directMessageForm) {
+    directMessageForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        friendMessage.textContent = "";
+
+        try {
+            await fetchJson("/api/friends/messages", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    recipientUsername: messageRecipientSelect.value,
+                    body: messageBodyInput.value
+                })
+            });
+            messageBodyInput.value = "";
+            friendMessage.style.color = "#087057";
+            friendMessage.textContent = "メッセージを送信しました。";
+            await loadDirectMessages();
+        } catch (error) {
+            friendMessage.style.color = "#be2f2f";
+            friendMessage.textContent = error.message;
+        }
+    });
+}
+
 async function loadFriendDashboard() {
     try {
         const data = await fetchJson("/api/friends");
+        currentFriends = Array.isArray(data.friends) ? data.friends : [];
+
         renderFriendList(friendList, data.friends, "フレンドがまだいません。", (friend) => {
             return `${friend.displayName} (@${friend.username})`;
         });
@@ -50,6 +85,9 @@ async function loadFriendDashboard() {
         renderFriendList(outgoingRequestList, data.outgoingRequests, "送信中の申請はありません。", (request) => {
             return `${request.requesterDisplayName} (@${request.requesterUsername})`;
         });
+
+        renderMessageRecipientOptions(currentFriends);
+        renderDirectMessageList(data.messages || []);
     } catch (error) {
         friendMessage.style.color = "#be2f2f";
         friendMessage.textContent = error.message;
@@ -60,6 +98,16 @@ async function loadTaskRanking(period) {
     try {
         const data = await fetchJson(`/api/friends/ranking?period=${encodeURIComponent(period)}`);
         renderLevelRanking(data.rows || []);
+    } catch (error) {
+        friendMessage.style.color = "#be2f2f";
+        friendMessage.textContent = error.message;
+    }
+}
+
+async function loadDirectMessages() {
+    try {
+        const rows = await fetchJson("/api/friends/messages?limit=100");
+        renderDirectMessageList(rows || []);
     } catch (error) {
         friendMessage.style.color = "#be2f2f";
         friendMessage.textContent = error.message;
@@ -112,6 +160,51 @@ function renderFriendList(targetElement, list, emptyText, itemTextBuilder) {
     });
 }
 
+function renderMessageRecipientOptions(friends) {
+    if (!messageRecipientSelect) {
+        return;
+    }
+    messageRecipientSelect.innerHTML = "";
+
+    if (!Array.isArray(friends) || friends.length === 0) {
+        const empty = document.createElement("option");
+        empty.value = "";
+        empty.textContent = "フレンドがいません";
+        messageRecipientSelect.appendChild(empty);
+        messageRecipientSelect.disabled = true;
+        return;
+    }
+
+    messageRecipientSelect.disabled = false;
+    friends.forEach((friend) => {
+        const option = document.createElement("option");
+        option.value = friend.username;
+        option.textContent = `${friend.displayName} (@${friend.username})`;
+        messageRecipientSelect.appendChild(option);
+    });
+}
+
+function renderDirectMessageList(rows) {
+    if (!directMessageList) {
+        return;
+    }
+    directMessageList.innerHTML = "";
+
+    if (!Array.isArray(rows) || rows.length === 0) {
+        directMessageList.innerHTML = "<li>メッセージはまだありません。</li>";
+        return;
+    }
+
+    rows.forEach((row) => {
+        const li = document.createElement("li");
+        const sender = row.senderUsername || "unknown";
+        const recipient = row.recipientUsername || "unknown";
+        const direction = sender === currentUsername ? `→ ${recipient}` : `← ${sender}`;
+        li.textContent = `${formatDateTime(row.createdAt)} ${direction} : ${row.body || ""}`;
+        directMessageList.appendChild(li);
+    });
+}
+
 function renderLevelRanking(rankingRows) {
     levelRankingList.innerHTML = "";
     if (!Array.isArray(rankingRows) || rankingRows.length === 0) {
@@ -144,7 +237,7 @@ function renderLevelRanking(rankingRows) {
 
         const meta = document.createElement("div");
         meta.className = "ranking-meta";
-        meta.textContent = `完了数: ${row.completedCount}`;
+        meta.textContent = `達成数: ${row.completedCount}`;
 
         const progressTrack = document.createElement("div");
         progressTrack.className = "ranking-progress-track";
@@ -166,15 +259,31 @@ function renderLevelRanking(rankingRows) {
 
 function medalText(rank) {
     if (rank === 1) {
-        return "🥇";
+        return "1";
     }
     if (rank === 2) {
-        return "🥈";
+        return "2";
     }
     if (rank === 3) {
-        return "🥉";
+        return "3";
     }
     return `${rank}`;
+}
+
+function formatDateTime(value) {
+    if (!value) {
+        return "-";
+    }
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        return String(value);
+    }
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    const h = String(date.getHours()).padStart(2, "0");
+    const min = String(date.getMinutes()).padStart(2, "0");
+    return `${y}-${m}-${d} ${h}:${min}`;
 }
 
 async function fetchJson(url, options = {}) {

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
@@ -14,6 +14,7 @@
         <a href="/board">募集掲示板</a>
         <a href="/friends">フレンド</a>
         <a href="/profile">ユーザー編集</a>
+        <a href="/dm">✉ DM</a>
         <a href="#profileSection">プロフィール</a>
     </nav>
 </header>
@@ -38,19 +39,19 @@
                 <label for="profileDisplayName">表示名</label>
                 <input id="profileDisplayName" type="text" maxlength="100" required>
 
-                <label for="profileEmail">通知先メールアドレス</label>
+                <label for="profileEmail">通知用メールアドレス</label>
                 <input id="profileEmail" type="email" maxlength="254" placeholder="example@gmail.com">
 
-                <label for="profileImageFile">アイコン画像を添付</label>
+                <label for="profileImageFile">アイコン画像を変更</label>
                 <input id="profileImageFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
-                <p class="help-text">PNG/JPEG/WEBP/GIF（2MBまで）</p>
+                <p class="help-text">PNG/JPEG/WEBP/GIF（5MBまで）</p>
 
                 <label class="inline-check">
                     <input id="removeProfileImage" type="checkbox">
                     現在の画像を削除する
                 </label>
 
-                <label for="profileIconColor">人型アイコンの色（画像未設定時）</label>
+                <label for="profileIconColor">人物アイコンの色（画像未設定時）</label>
                 <input id="profileIconColor" type="color" value="#BFD6FF">
 
                 <label for="profileBio">自己紹介</label>
@@ -73,12 +74,12 @@
         <section class="friend-section">
             <h3>ラベル色カスタマイズ</h3>
             <form id="labelColorForm" class="schedule-form">
-                <label for="labelTextColor">ラベル本文色</label>
+                <label for="labelTextColor">ラベル本文の色</label>
                 <input id="labelTextColor" type="color" value="#2B4E93">
                 <div class="form-actions">
                     <button id="resetLabelTextColorButton" type="button" class="secondary">本文色を初期化</button>
                 </div>
-                <label for="labelHeadingColor">ラベル見出し色</label>
+                <label for="labelHeadingColor">ラベル見出しの色</label>
                 <input id="labelHeadingColor" type="color" value="#7D35D8">
                 <div class="form-actions">
                     <button id="resetLabelHeadingColorButton" type="button" class="secondary">見出し色を初期化</button>

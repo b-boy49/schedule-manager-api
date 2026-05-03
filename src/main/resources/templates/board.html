@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
@@ -14,6 +14,7 @@
         <a href="/board">募集掲示板</a>
         <a href="/friends">フレンド</a>
         <a href="/profile">ユーザー編集</a>
+        <a href="/dm">✉ DM</a>
     </nav>
 </header>
 
@@ -57,8 +58,8 @@
         <section class="friend-section">
             <h3 id="selectedThreadLabel">スレッドを選択してください</h3>
             <form id="postForm" class="schedule-form">
-                <label for="postBody">募集内容</label>
-                <textarea id="postBody" rows="4" maxlength="1000" placeholder="例: 今夜21時から2人募集します" required></textarea>
+                <label for="postBody">投稿内容</label>
+                <textarea id="postBody" rows="4" maxlength="1000" placeholder="例: 21時から2人募集します" required></textarea>
 
                 <label for="postScheduleDate">予定日（任意）</label>
                 <input id="postScheduleDate" type="date">
@@ -70,13 +71,13 @@
                 <input id="postRecruitmentLimit" type="number" min="1" step="1" placeholder="例: 2">
 
                 <div class="form-actions">
-                    <button type="submit" class="primary">募集を投稿</button>
+                    <button type="submit" class="primary">投稿を送信</button>
                 </div>
             </form>
         </section>
 
         <section class="friend-section">
-            <h3>募集投稿</h3>
+            <h3>投稿一覧</h3>
             <ul id="postList" class="mini-list"></ul>
         </section>
     </section>

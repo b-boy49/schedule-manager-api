@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 public class DirectMessage {
     private Long id;
+    private Long conversationId;
     private Long senderUserId;
     private Long recipientUserId;
     private String senderUsername;
@@ -21,6 +22,14 @@ public class DirectMessage {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getConversationId() {
+        return conversationId;
+    }
+
+    public void setConversationId(Long conversationId) {
+        this.conversationId = conversationId;
     }
 
     public Long getSenderUserId() {

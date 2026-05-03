@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
@@ -14,6 +14,7 @@
         <a href="/board">募集掲示板</a>
         <a href="/friends">フレンド</a>
         <a href="/profile">ユーザー編集</a>
+        <a href="/dm">✉ DM</a>
         <a href="#messageSection">メッセージ</a>
     </nav>
 </header>
@@ -54,10 +55,10 @@
         </section>
 
         <section class="friend-section">
-            <h3>フレンド レベルランキング</h3>
+            <h3>フレンドレベルランキング</h3>
             <div class="ranking-tabs" role="tablist" aria-label="ランキング期間">
-                <button type="button" class="ranking-tab active" data-period="week">今週</button>
-                <button type="button" class="ranking-tab" data-period="month">今月</button>
+                <button type="button" class="ranking-tab active" data-period="week">週間</button>
+                <button type="button" class="ranking-tab" data-period="month">月間</button>
                 <button type="button" class="ranking-tab" data-period="all">全期間</button>
             </div>
             <ul id="levelRankingList" class="mini-list ranking-list"></ul>
@@ -65,7 +66,18 @@
 
         <section id="messageSection" class="friend-section message-section">
             <h3>メッセージ</h3>
-            <p class="help-text">メッセージ機能は準備中です。</p>
+            <form id="directMessageForm" class="schedule-form">
+                <label for="messageRecipient">送信先フレンド</label>
+                <select id="messageRecipient" required></select>
+
+                <label for="messageBody">本文</label>
+                <textarea id="messageBody" rows="3" maxlength="1000" placeholder="メッセージを入力"></textarea>
+
+                <div class="form-actions">
+                    <button type="submit" class="primary">送信</button>
+                </div>
+            </form>
+            <ul id="directMessageList" class="mini-list"></ul>
         </section>
     </section>
 </main>
