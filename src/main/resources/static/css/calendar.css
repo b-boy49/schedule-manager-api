@@ -126,6 +126,89 @@ body::after {
     letter-spacing: 0.05em;
     color: #21439a;
     text-shadow: 0 0 6px #d8f3ff, 0 0 14px #5dd6ff, 0 0 24px #8b7bff99;
+    animation: hero-neon-wave 2.8s ease-in-out infinite, hero-neon-flicker 4.2s linear infinite;
+    transform-origin: center;
+    position: relative;
+    display: inline-block;
+    overflow: hidden;
+}
+
+.page-hero h1::after {
+    content: "";
+    position: absolute;
+    top: -18%;
+    left: -40%;
+    width: 26%;
+    height: 140%;
+    background: linear-gradient(110deg, transparent 0%, #ffffffd0 45%, #ffffff 52%, #b8efff 58%, transparent 100%);
+    filter: blur(0.4px);
+    transform: skewX(-18deg);
+    animation: hero-neon-glint 2.2s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes hero-neon-wave {
+    0% {
+        transform: translate3d(0, 0, 0) scale(1) skewX(0deg) rotate(0deg);
+        letter-spacing: 0.05em;
+    }
+    20% {
+        transform: translate3d(-2px, -3px, 0) scale(1.01) skewX(-2deg) rotate(-0.3deg);
+        letter-spacing: 0.065em;
+    }
+    40% {
+        transform: translate3d(2px, 2px, 0) scale(0.998) skewX(1.8deg) rotate(0.22deg);
+        letter-spacing: 0.052em;
+    }
+    60% {
+        transform: translate3d(-1px, -2px, 0) scale(1.008) skewX(-1.6deg) rotate(-0.2deg);
+        letter-spacing: 0.062em;
+    }
+    80% {
+        transform: translate3d(1px, 1px, 0) scale(1.002) skewX(1deg) rotate(0.15deg);
+        letter-spacing: 0.055em;
+    }
+    100% {
+        transform: translate3d(0, 0, 0) scale(1) skewX(0deg) rotate(0deg);
+        letter-spacing: 0.05em;
+    }
+}
+
+@keyframes hero-neon-flicker {
+    0%, 100% {
+        text-shadow: 0 0 6px #d8f3ff, 0 0 14px #5dd6ff, 0 0 24px #8b7bff99;
+        filter: brightness(1);
+    }
+    20% {
+        text-shadow: 0 0 8px #e6f7ff, 0 0 18px #71e1ff, 0 0 30px #9f8bff;
+        filter: brightness(1.06);
+    }
+    48% {
+        text-shadow: 0 0 5px #cdeeff, 0 0 12px #48cfff, 0 0 20px #7f76ff88;
+        filter: brightness(0.97);
+    }
+    72% {
+        text-shadow: 0 0 9px #f0fbff, 0 0 20px #82e6ff, 0 0 34px #b299ff;
+        filter: brightness(1.08);
+    }
+}
+
+@keyframes hero-neon-glint {
+    0% {
+        left: -42%;
+        opacity: 0;
+    }
+    18% {
+        opacity: 0.95;
+    }
+    42% {
+        left: 118%;
+        opacity: 0;
+    }
+    100% {
+        left: 118%;
+        opacity: 0;
+    }
 }
 
 .hero-nav {
