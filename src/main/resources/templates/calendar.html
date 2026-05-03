@@ -17,6 +17,9 @@
         <a href="/dm">✉ DM</a>
     </nav>
 </header>
+<form method="post" action="/logout" class="logout-floating">
+    <button type="submit">ログアウト</button>
+</form>
 <main class="app-shell" th:attr="data-today=${today},data-current-username=${currentUsername},data-current-display-name=${currentDisplayName}">
     <section class="calendar-pane">
         <header class="calendar-header">
@@ -39,9 +42,6 @@
             <h2 id="selectedDateLabel"></h2>
             <div class="header-actions">
                 <button id="newScheduleButton" type="button">+ 新しい予定</button>
-                <form method="post" action="/logout">
-                    <button type="submit" class="secondary">ログアウト</button>
-                </form>
             </div>
         </header>
 

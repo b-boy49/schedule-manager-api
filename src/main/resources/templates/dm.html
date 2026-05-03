@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
@@ -17,15 +17,15 @@
         <a href="/dm" aria-current="page">✉ DM</a>
     </nav>
 </header>
+<form method="post" action="/logout" class="logout-floating">
+    <button type="submit">ログアウト</button>
+</form>
 
 <main class="app-shell friends-shell"
       th:attr="data-current-username=${currentUsername},data-current-display-name=${currentDisplayName}">
     <section class="schedule-pane">
         <header>
             <h2>ダイレクトメッセージ</h2>
-            <form method="post" action="/logout">
-                <button type="submit" class="secondary">ログアウト</button>
-            </form>
         </header>
 
         <section class="friend-section">

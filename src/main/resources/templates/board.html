@@ -17,15 +17,15 @@
         <a href="/dm">✉ DM</a>
     </nav>
 </header>
+<form method="post" action="/logout" class="logout-floating">
+    <button type="submit">ログアウト</button>
+</form>
 
 <main class="app-shell friends-shell"
       th:attr="data-current-username=${currentUsername},data-current-display-name=${currentDisplayName},data-search-keyword=${keyword}">
     <section class="schedule-pane">
         <header>
             <h2>ゲーム募集掲示板</h2>
-            <form method="post" action="/logout">
-                <button type="submit" class="secondary">ログアウト</button>
-            </form>
         </header>
 
         <section class="friend-section">

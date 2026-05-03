@@ -18,14 +18,14 @@
         <a href="#profileSection">プロフィール</a>
     </nav>
 </header>
+<form method="post" action="/logout" class="logout-floating">
+    <button type="submit">ログアウト</button>
+</form>
 
 <main class="app-shell friends-shell" th:attr="data-current-username=${currentUsername},data-current-display-name=${currentDisplayName}">
     <section id="profileSection" class="schedule-pane">
         <header>
             <h2>ユーザー編集</h2>
-            <form method="post" action="/logout">
-                <button type="submit" class="secondary">ログアウト</button>
-            </form>
         </header>
 
         <section class="friend-section profile-layout">

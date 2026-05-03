@@ -1178,6 +1178,31 @@ a.auth-link-button:active,
     box-shadow: 0 0 18px #67d8ff99;
 }
 
+.logout-floating {
+    position: fixed;
+    top: 12px;
+    right: 62px;
+    z-index: 50;
+    margin: 0;
+}
+
+.logout-floating button {
+    border: 1px solid #9ec7ff;
+    border-radius: 999px;
+    height: 42px;
+    padding: 0 14px;
+    background: #ffffffd9;
+    color: #1f3c74;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 0 12px #8fcfff70;
+}
+
+.logout-floating button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0 18px #67d8ff99;
+}
+
 body.dark-mode {
     --bg: radial-gradient(circle at 20% 15%, #203a6f 0%, transparent 34%),
         radial-gradient(circle at 84% 18%, #3a2f67 0%, transparent 32%),
@@ -1240,6 +1265,12 @@ body.dark-mode .inline-form input::placeholder {
 body.dark-mode .hero-nav a,
 body.dark-mode .secondary,
 body.dark-mode .theme-toggle {
+    background: #1a2c4c;
+    color: #c4daff;
+    border-color: #395a90;
+}
+
+body.dark-mode .logout-floating button {
     background: #1a2c4c;
     color: #c4daff;
     border-color: #395a90;
