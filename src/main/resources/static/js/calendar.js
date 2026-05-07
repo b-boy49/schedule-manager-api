@@ -29,6 +29,7 @@ const weekdaysContainer = document.getElementById("weekdays");
 const calendarGrid = document.getElementById("calendarGrid");
 const selectedDateLabel = document.getElementById("selectedDateLabel");
 const scheduleList = document.getElementById("scheduleList");
+const topScheduleSearchForm = document.getElementById("topScheduleSearchForm");
 const topScheduleSearchInput = document.getElementById("topScheduleSearchInput");
 const topScheduleSearchStatus = document.getElementById("topScheduleSearchStatus");
 const topScheduleFilterType = document.getElementById("topScheduleFilterType");
@@ -75,6 +76,7 @@ const notificationIntervalMinutesInput = document.getElementById("notificationIn
 const notificationStatus = document.getElementById("notificationStatus");
 
 const NOTIFICATION_SETTINGS_KEY = "schedule_notification_settings";
+const NOTIFICATION_EVENT_LAST_ID_KEY = "schedule_notification_last_event_id";
 let reminderTimerId = null;
 let titleSpeechRecognition = null;
 let descriptionSpeechRecognition = null;
@@ -82,8 +84,9 @@ let titleSpeechRecognitionRunning = false;
 let descriptionSpeechRecognitionRunning = false;
 let latestSchedules = [];
 
-if (topScheduleSearchInput) {
-    topScheduleSearchInput.addEventListener("input", () => {
+if (topScheduleSearchForm) {
+    topScheduleSearchForm.addEventListener("submit", (event) => {
+        event.preventDefault();
         applyScheduleFilters();
     });
 }
@@ -245,6 +248,14 @@ if (notificationPermissionButton) {
         }
         const permission = await Notification.requestPermission();
         notificationStatus.textContent = `通知権限: ${permission}`;
+        if (permission === "granted") {
+            try {
+                await ensureWebPushSubscription();
+                notificationStatus.textContent = "通知権限: granted（Web Push購読済み）";
+            } catch (error) {
+                notificationStatus.textContent = "通知権限は許可されましたが、Web Push購読に失敗しました。";
+            }
+        }
         syncReminderTimer();
     });
 }
@@ -1201,11 +1212,17 @@ function syncReminderTimer() {
         return;
     }
     reminderTimerId = window.setInterval(() => {
-        checkDueSoonTasks(settings.intervalMinutes).catch(() => {
+        Promise.all([
+            checkDueSoonTasks(settings.intervalMinutes),
+            checkNotificationEvents()
+        ]).catch(() => {
             notificationStatus.textContent = "通知チェックに失敗しました。";
         });
     }, settings.intervalMinutes * 60 * 1000);
-    checkDueSoonTasks(settings.intervalMinutes).catch(() => {
+    Promise.all([
+        checkDueSoonTasks(settings.intervalMinutes),
+        checkNotificationEvents()
+    ]).catch(() => {
         notificationStatus.textContent = "通知チェックに失敗しました。";
     });
     notificationStatus.textContent = `通知は有効です（${settings.intervalMinutes}分ごと）`;
@@ -1252,6 +1269,48 @@ function saveSeenReminderMap(map) {
     const sorted = entries.sort((a, b) => Number(b[1]) - Number(a[1])).slice(0, 300);
     const trimmed = Object.fromEntries(sorted);
     localStorage.setItem(key, JSON.stringify(trimmed));
+}
+
+function loadLastNotificationEventId() {
+    try {
+        const raw = localStorage.getItem(NOTIFICATION_EVENT_LAST_ID_KEY);
+        const parsed = Number.parseInt(String(raw ?? "0"), 10);
+        return Number.isNaN(parsed) ? 0 : Math.max(parsed, 0);
+    } catch (error) {
+        return 0;
+    }
+}
+
+function saveLastNotificationEventId(id) {
+    const safeId = Number.parseInt(String(id ?? "0"), 10);
+    if (Number.isNaN(safeId) || safeId <= 0) {
+        return;
+    }
+    localStorage.setItem(NOTIFICATION_EVENT_LAST_ID_KEY, String(safeId));
+}
+
+async function checkNotificationEvents() {
+    const sinceId = loadLastNotificationEventId();
+    const events = await fetchJson(`/api/notifications/events?sinceId=${sinceId}&limit=30`);
+    if (!Array.isArray(events) || events.length === 0) {
+        return;
+    }
+
+    const isInitialSync = sinceId === 0;
+    let maxId = sinceId;
+    events.forEach((event) => {
+        const currentId = Number(event.id ?? 0);
+        if (currentId > maxId) {
+            maxId = currentId;
+        }
+        if (isInitialSync) {
+            return;
+        }
+        const title = event.title || "通知";
+        const body = event.body || "";
+        new Notification(title, { body });
+    });
+    saveLastNotificationEventId(maxId);
 }
 
 function toDate(yyyyMmDd) {
@@ -1581,3 +1640,45 @@ async function initializeCalendarPage() {
 }
 
 initializeCalendarPage();
+
+async function ensureWebPushSubscription() {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+        throw new Error("Web Push未対応ブラウザです。");
+    }
+
+    const keyResponse = await fetchJson("/api/push/public-key");
+    const publicKey = keyResponse && keyResponse.publicKey ? String(keyResponse.publicKey).trim() : "";
+    if (!publicKey) {
+        throw new Error("VAPID公開鍵が未設定です。");
+    }
+
+    const registration = await navigator.serviceWorker.register("/sw.js");
+    let subscription = await registration.pushManager.getSubscription();
+    if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: base64UrlToUint8Array(publicKey)
+        });
+    }
+    const json = subscription.toJSON();
+    await fetchJson("/api/push/subscriptions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            endpoint: json.endpoint,
+            p256dh: json.keys && json.keys.p256dh ? json.keys.p256dh : "",
+            auth: json.keys && json.keys.auth ? json.keys.auth : ""
+        })
+    });
+}
+
+function base64UrlToUint8Array(base64UrlString) {
+    const padding = "=".repeat((4 - (base64UrlString.length % 4)) % 4);
+    const base64 = (base64UrlString + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const raw = window.atob(base64);
+    const output = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i += 1) {
+        output[i] = raw.charCodeAt(i);
+    }
+    return output;
+}

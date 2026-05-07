@@ -84,10 +84,25 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-        <groupId>io.sentry</groupId>
-        <artifactId>sentry-spring-boot-starter</artifactId>
-        <version>7.10.0</version>
-    </dependency>
+			<groupId>io.sentry</groupId>
+			<artifactId>sentry-spring-boot-starter</artifactId>
+			<version>7.10.0</version>
+		</dependency>
+		<dependency>
+			<groupId>nl.martijndwars</groupId>
+			<artifactId>web-push</artifactId>
+			<version>5.1.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcprov-jdk18on</artifactId>
+			<version>1.78.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<version>4.5.14</version>
+		</dependency>
 
 	</dependencies>
 

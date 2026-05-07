@@ -16,6 +16,7 @@ const directMessageList = document.getElementById("directMessageList");
 
 let currentRankingPeriod = "week";
 let currentFriends = [];
+let enabledFriendNotificationUserIds = new Set();
 
 friendRequestForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -76,10 +77,13 @@ async function loadFriendDashboard() {
     try {
         const data = await fetchJson("/api/friends");
         currentFriends = Array.isArray(data.friends) ? data.friends : [];
+        enabledFriendNotificationUserIds = new Set(
+            Array.isArray(data.enabledFriendNotificationUserIds)
+                ? data.enabledFriendNotificationUserIds.map((id) => Number(id))
+                : []
+        );
 
-        renderFriendList(friendList, data.friends, "フレンドがまだいません。", (friend) => {
-            return `${friend.displayName} (@${friend.username})`;
-        });
+        renderFriendListWithNotification(currentFriends);
 
         renderIncomingRequests(data.incomingRequests || []);
         renderFriendList(outgoingRequestList, data.outgoingRequests, "送信中の申請はありません。", (request) => {
@@ -157,6 +161,63 @@ function renderFriendList(targetElement, list, emptyText, itemTextBuilder) {
         const li = document.createElement("li");
         li.textContent = itemTextBuilder(item);
         targetElement.appendChild(li);
+    });
+}
+
+function renderFriendListWithNotification(list) {
+    friendList.innerHTML = "";
+    if (!Array.isArray(list) || list.length === 0) {
+        const li = document.createElement("li");
+        li.textContent = "テストフレンド (@demo_friend) ";
+
+        const notifyButton = document.createElement("button");
+        notifyButton.type = "button";
+        notifyButton.textContent = "通知OFF";
+        notifyButton.className = "secondary";
+        notifyButton.disabled = true;
+        notifyButton.title = "仮想フレンドのため操作できません";
+
+        const hint = document.createElement("span");
+        hint.className = "help-text";
+        hint.textContent = "（確認用の仮想フレンド）";
+
+        li.appendChild(notifyButton);
+        li.appendChild(hint);
+        friendList.appendChild(li);
+        return;
+    }
+
+    list.forEach((friend) => {
+        const li = document.createElement("li");
+        li.textContent = `${friend.displayName} (@${friend.username}) `;
+
+        const notifyButton = document.createElement("button");
+        notifyButton.type = "button";
+        const friendId = Number(friend.id);
+        const isEnabled = enabledFriendNotificationUserIds.has(friendId);
+        notifyButton.textContent = isEnabled ? "通知ON" : "通知OFF";
+        notifyButton.className = isEnabled ? "primary" : "secondary";
+        notifyButton.addEventListener("click", async () => {
+            try {
+                await fetchJson("/api/friends/notifications/preferences", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        friendUserId: friendId,
+                        enabled: !isEnabled
+                    })
+                });
+                friendMessage.style.color = "#087057";
+                friendMessage.textContent = `${friend.displayName} の通知を${!isEnabled ? "ON" : "OFF"}にしました。`;
+                await loadFriendDashboard();
+            } catch (error) {
+                friendMessage.style.color = "#be2f2f";
+                friendMessage.textContent = error.message;
+            }
+        });
+
+        li.appendChild(notifyButton);
+        friendList.appendChild(li);
     });
 }
 

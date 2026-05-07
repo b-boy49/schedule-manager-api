@@ -21,10 +21,18 @@ import org.springframework.transaction.annotation.Transactional;
 public class BoardService {
     private final BoardMapper boardMapper;
     private final UserMapper userMapper;
+    private final NotificationEventService notificationEventService;
+    private final FriendNotificationPreferenceService friendNotificationPreferenceService;
 
-    public BoardService(BoardMapper boardMapper, UserMapper userMapper) {
+    public BoardService(
+            BoardMapper boardMapper,
+            UserMapper userMapper,
+            NotificationEventService notificationEventService,
+            FriendNotificationPreferenceService friendNotificationPreferenceService) {
         this.boardMapper = boardMapper;
         this.userMapper = userMapper;
+        this.notificationEventService = notificationEventService;
+        this.friendNotificationPreferenceService = friendNotificationPreferenceService;
     }
 
     @Transactional(readOnly = true)
@@ -102,6 +110,7 @@ public class BoardService {
         post.setRecruitmentLimit(recruitmentLimit);
         boardMapper.insertPost(post);
         boardMapper.touchThreadUpdatedAt(threadId);
+        notifyFriendFollowersForRecruitment(user, threadId);
 
         return boardMapper.findPostsByThreadId(threadId).stream()
                 .filter(row -> row.getId().equals(post.getId()))
@@ -139,6 +148,17 @@ public class BoardService {
         interest.setRequesterUserId(user.getId());
         interest.setComment(comment);
         boardMapper.insertPostInterest(interest);
+        if (post.getAuthorUserId() != null && !post.getAuthorUserId().equals(user.getId())) {
+            BoardThread thread = post.getThreadId() == null ? null : boardMapper.findThreadById(post.getThreadId());
+            String threadTitle = thread == null || thread.getGameTitle() == null ? "募集投稿" : thread.getGameTitle();
+            String actorName = user.getDisplayName() == null ? user.getUsername() : user.getDisplayName();
+            notificationEventService.publish(
+                    post.getAuthorUserId(),
+                    user.getId(),
+                    "BOARD_INTEREST",
+                    "参加希望コメント",
+                    actorName + " さんが「" + threadTitle + "」に参加希望コメントを投稿しました。");
+        }
 
         return boardMapper.findInterestsByPostId(postId).stream()
                 .filter(row -> row.getId().equals(interest.getId()))
@@ -204,5 +224,26 @@ public class BoardService {
             return null;
         }
         return value.trim();
+    }
+
+    private void notifyFriendFollowersForRecruitment(AppUser actor, Long threadId) {
+        if (actor == null || actor.getId() == null) {
+            return;
+        }
+        List<Long> recipients = friendNotificationPreferenceService.findRecipientsByActor(actor.getId());
+        if (recipients.isEmpty()) {
+            return;
+        }
+        BoardThread thread = boardMapper.findThreadById(threadId);
+        String gameTitle = thread == null || thread.getGameTitle() == null ? "募集投稿" : thread.getGameTitle();
+        String actorName = actor.getDisplayName() == null ? actor.getUsername() : actor.getDisplayName();
+        for (Long recipientUserId : recipients) {
+            notificationEventService.publish(
+                    recipientUserId,
+                    actor.getId(),
+                    "FRIEND_BOARD_UPDATE",
+                    "フレンド募集通知",
+                    actorName + " さんが「" + gameTitle + "」の募集を投稿しました。");
+        }
     }
 }

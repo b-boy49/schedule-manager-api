@@ -35,11 +35,20 @@ public class ScheduleService {
     private final ScheduleMapper scheduleMapper;
     private final UserMapper userMapper;
     private final GamificationService gamificationService;
+    private final NotificationEventService notificationEventService;
+    private final FriendNotificationPreferenceService friendNotificationPreferenceService;
 
-    public ScheduleService(ScheduleMapper scheduleMapper, UserMapper userMapper, GamificationService gamificationService) {
+    public ScheduleService(
+            ScheduleMapper scheduleMapper,
+            UserMapper userMapper,
+            GamificationService gamificationService,
+            NotificationEventService notificationEventService,
+            FriendNotificationPreferenceService friendNotificationPreferenceService) {
         this.scheduleMapper = scheduleMapper;
         this.userMapper = userMapper;
         this.gamificationService = gamificationService;
+        this.notificationEventService = notificationEventService;
+        this.friendNotificationPreferenceService = friendNotificationPreferenceService;
     }
 
     @Transactional
@@ -187,6 +196,7 @@ public class ScheduleService {
         ScheduleItem created = scheduleMapper.findVisibleById(item.getId(), currentUser.getId());
         gamificationService.awardScheduleCreated(currentUser.getId(), created.getTitle(), created.getId());
         decorateForViewer(created, currentUser.getId());
+        notifyFriendFollowers(currentUser, created.getTitle(), "予定を追加しました。");
         return created;
     }
 
@@ -217,6 +227,7 @@ public class ScheduleService {
 
         ScheduleItem updated = scheduleMapper.findVisibleById(id, currentUser.getId());
         decorateForViewer(updated, currentUser.getId());
+        notifyFriendFollowers(currentUser, updated.getTitle(), "予定を更新しました。");
         return updated;
     }
 
@@ -249,6 +260,16 @@ public class ScheduleService {
         }
 
         scheduleMapper.insertParticipant(id, currentUser.getId());
+        if (target.getOwnerUserId() != null && !target.getOwnerUserId().equals(currentUser.getId())) {
+            String actorName = currentUser.getDisplayName() == null ? currentUser.getUsername() : currentUser.getDisplayName();
+            String scheduleTitle = target.getTitle() == null ? "予定" : target.getTitle();
+            notificationEventService.publish(
+                    target.getOwnerUserId(),
+                    currentUser.getId(),
+                    "SCHEDULE_JOIN",
+                    "参加通知",
+                    actorName + " さんが「" + scheduleTitle + "」に参加しました。");
+        }
     }
 
     @Transactional
@@ -648,6 +669,26 @@ public class ScheduleService {
             throw new NoSuchElementException("ログインユーザーが見つかりません。");
         }
         return user;
+    }
+
+    private void notifyFriendFollowers(AppUser actor, String scheduleTitle, String suffix) {
+        if (actor == null || actor.getId() == null) {
+            return;
+        }
+        List<Long> recipients = friendNotificationPreferenceService.findRecipientsByActor(actor.getId());
+        if (recipients.isEmpty()) {
+            return;
+        }
+        String actorName = actor.getDisplayName() == null ? actor.getUsername() : actor.getDisplayName();
+        String title = scheduleTitle == null || scheduleTitle.isBlank() ? "予定" : scheduleTitle;
+        for (Long recipientUserId : recipients) {
+            notificationEventService.publish(
+                    recipientUserId,
+                    actor.getId(),
+                    "FRIEND_SCHEDULE_UPDATE",
+                    "フレンド更新通知",
+                    actorName + " さんが「" + title + "」" + suffix);
+        }
     }
 
     private LocalTime parseTime(String value, String fieldName) {

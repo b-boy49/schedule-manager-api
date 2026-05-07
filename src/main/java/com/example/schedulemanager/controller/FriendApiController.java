@@ -1,11 +1,13 @@
 package com.example.schedulemanager.controller;
 
 import com.example.schedulemanager.dto.FriendRequestCreateRequest;
+import com.example.schedulemanager.dto.FriendNotificationPreferenceRequest;
 import com.example.schedulemanager.dto.DirectMessageSendRequest;
 import com.example.schedulemanager.model.AppUser;
 import com.example.schedulemanager.model.DirectMessage;
 import com.example.schedulemanager.service.DirectMessageService;
 import com.example.schedulemanager.service.FriendshipService;
+import com.example.schedulemanager.service.FriendNotificationPreferenceService;
 import com.example.schedulemanager.service.GamificationService;
 import com.example.schedulemanager.service.UserAccountService;
 import java.util.List;
@@ -28,16 +30,19 @@ public class FriendApiController {
     private final UserAccountService userAccountService;
     private final GamificationService gamificationService;
     private final DirectMessageService directMessageService;
+    private final FriendNotificationPreferenceService friendNotificationPreferenceService;
 
     public FriendApiController(
             FriendshipService friendshipService,
             UserAccountService userAccountService,
             GamificationService gamificationService,
-            DirectMessageService directMessageService) {
+            DirectMessageService directMessageService,
+            FriendNotificationPreferenceService friendNotificationPreferenceService) {
         this.friendshipService = friendshipService;
         this.userAccountService = userAccountService;
         this.gamificationService = gamificationService;
         this.directMessageService = directMessageService;
+        this.friendNotificationPreferenceService = friendNotificationPreferenceService;
     }
 
     @GetMapping
@@ -47,8 +52,21 @@ public class FriendApiController {
                 "friends", friendshipService.listFriends(user.getId()),
                 "incomingRequests", friendshipService.listIncomingPending(user.getId()),
                 "outgoingRequests", friendshipService.listOutgoingPending(user.getId()),
+                "enabledFriendNotificationUserIds", friendNotificationPreferenceService.listEnabledFriendUserIds(user.getId()),
                 "taskRanking", gamificationService.buildTaskCompletionRanking(user.getId(), "all"),
                 "messages", directMessageService.listRecentMessages(user.getId(), 100));
+    }
+
+    @PostMapping("/notifications/preferences")
+    public ResponseEntity<Void> setFriendNotificationPreference(
+            @RequestBody FriendNotificationPreferenceRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        AppUser user = userAccountService.getByUsername(userDetails.getUsername());
+        friendNotificationPreferenceService.setPreference(
+                user.getId(),
+                request == null ? null : request.getFriendUserId(),
+                request != null && Boolean.TRUE.equals(request.getEnabled()));
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/ranking")
