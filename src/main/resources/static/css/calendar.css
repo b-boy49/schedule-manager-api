@@ -559,6 +559,10 @@ body::after {
     background: #f8fbff;
 }
 
+.top-search-shell {
+    grid-column: 1 / -1;
+}
+
 .board-entry-cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

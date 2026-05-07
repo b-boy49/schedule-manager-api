@@ -17,6 +17,7 @@ const state = {
     currentMonth: toDate(initialToday),
     selectedDate: initialToday,
     monthMarkersByDate: new Map(),
+    rawMonthMarkerRows: [],
     friendShareCandidates: [],
     selectedFriendShareUserIds: new Set()
 };
@@ -28,6 +29,12 @@ const weekdaysContainer = document.getElementById("weekdays");
 const calendarGrid = document.getElementById("calendarGrid");
 const selectedDateLabel = document.getElementById("selectedDateLabel");
 const scheduleList = document.getElementById("scheduleList");
+const topScheduleSearchInput = document.getElementById("topScheduleSearchInput");
+const topScheduleSearchStatus = document.getElementById("topScheduleSearchStatus");
+const topScheduleFilterType = document.getElementById("topScheduleFilterType");
+const topScheduleResetButton = document.getElementById("topScheduleResetButton");
+const topFriendFilterWrap = document.getElementById("topFriendFilterWrap");
+const topFriendFilterSelect = document.getElementById("topFriendFilterSelect");
 
 const form = document.getElementById("scheduleForm");
 const formTitle = document.getElementById("formTitle");
@@ -73,6 +80,30 @@ let titleSpeechRecognition = null;
 let descriptionSpeechRecognition = null;
 let titleSpeechRecognitionRunning = false;
 let descriptionSpeechRecognitionRunning = false;
+let latestSchedules = [];
+
+if (topScheduleSearchInput) {
+    topScheduleSearchInput.addEventListener("input", () => {
+        applyScheduleFilters();
+    });
+}
+if (topScheduleFilterType) {
+    topScheduleFilterType.addEventListener("change", () => {
+        syncTopFilterControls();
+        applyScheduleFilters();
+    });
+}
+if (topFriendFilterSelect) {
+    topFriendFilterSelect.addEventListener("change", () => {
+        applyScheduleFilters();
+    });
+}
+if (topScheduleResetButton) {
+    topScheduleResetButton.addEventListener("click", () => {
+        resetTopScheduleFilters();
+        applyScheduleFilters();
+    });
+}
 
 document.getElementById("prevMonth").addEventListener("click", async () => {
     await changeMonth(-1);
@@ -357,14 +388,39 @@ async function loadSchedules(dateKey, focusScheduleId = null) {
 
     try {
         const schedules = await fetchJson(`/api/schedules?date=${encodeURIComponent(dateKey)}`);
+        latestSchedules = Array.isArray(schedules) ? schedules : [];
+        renderScheduleList(filterSchedulesByTopFilter(latestSchedules));
+        if (focusScheduleId != null) {
+            focusScheduleCard(focusScheduleId);
+        }
+    } catch (error) {
+        scheduleList.innerHTML = `<li>${error.message}</li>`;
+        if (topScheduleSearchStatus) {
+            topScheduleSearchStatus.textContent = "";
+        }
+    }
+}
+
+function renderScheduleList(schedules) {
         scheduleList.innerHTML = "";
+        const filtered = schedules;
 
         if (!Array.isArray(schedules) || schedules.length === 0) {
             scheduleList.innerHTML = "<li>この日の予定はまだありません。</li>";
+            if (topScheduleSearchStatus) {
+                topScheduleSearchStatus.textContent = "";
+            }
+            return;
+        }
+        if (topScheduleSearchStatus) {
+            topScheduleSearchStatus.textContent = `表示: ${filtered.length}件 / 全${schedules.length}件`;
+        }
+        if (filtered.length === 0) {
+            scheduleList.innerHTML = "<li>検索条件に一致する予定はありません。</li>";
             return;
         }
 
-        schedules.forEach((item) => {
+        filtered.forEach((item) => {
             const li = document.createElement("li");
             li.className = "schedule-card";
             li.dataset.scheduleId = String(item.id ?? "");
@@ -509,12 +565,110 @@ async function loadSchedules(dateKey, focusScheduleId = null) {
 
             scheduleList.appendChild(li);
         });
-        if (focusScheduleId != null) {
-            focusScheduleCard(focusScheduleId);
+}
+
+function filterSchedulesByTopFilter(schedules) {
+    const mode = topScheduleFilterType ? topScheduleFilterType.value : "game";
+    if (mode === "friend") {
+        const selectedNames = getSelectedFriendNames();
+        if (selectedNames.length === 0) {
+            return schedules;
         }
-    } catch (error) {
-        scheduleList.innerHTML = `<li>${error.message}</li>`;
+        return schedules.filter((item) => {
+            const owner = String(item.ownerDisplayName || item.ownerUsername || "");
+            return selectedNames.includes(owner);
+        });
     }
+    const keyword = String(topScheduleSearchInput ? topScheduleSearchInput.value : "").trim().toLowerCase();
+    if (!keyword) {
+        return schedules;
+    }
+    return schedules.filter((item) => String(item.title || "").toLowerCase().includes(keyword));
+}
+
+function getSelectedFriendNames() {
+    if (!topFriendFilterSelect) {
+        return [];
+    }
+    return Array.from(topFriendFilterSelect.selectedOptions).map((option) => option.value).filter((value) => value);
+}
+
+function syncTopFilterControls() {
+    const mode = topScheduleFilterType ? topScheduleFilterType.value : "game";
+    const friendMode = mode === "friend";
+    if (topScheduleSearchInput) {
+        topScheduleSearchInput.disabled = friendMode;
+        topScheduleSearchInput.placeholder = friendMode
+            ? "フレンド名フィルター時は下で複数選択"
+            : "ゲーム名を入力（例: Apex Legends）";
+    }
+    if (topFriendFilterWrap) {
+        topFriendFilterWrap.hidden = !friendMode;
+    }
+}
+
+function resetTopScheduleFilters() {
+    if (topScheduleFilterType) {
+        topScheduleFilterType.value = "game";
+    }
+    if (topScheduleSearchInput) {
+        topScheduleSearchInput.value = "";
+    }
+    if (topFriendFilterSelect) {
+        Array.from(topFriendFilterSelect.options).forEach((option) => {
+            option.selected = false;
+        });
+    }
+    syncTopFilterControls();
+}
+
+function applyScheduleFilters() {
+    renderScheduleList(filterSchedulesByTopFilter(latestSchedules));
+    rebuildMonthMarkersFromFilter();
+    renderCalendar();
+}
+
+function filterMonthRowsByTopFilter(rows) {
+    const mode = topScheduleFilterType ? topScheduleFilterType.value : "game";
+    if (mode === "friend") {
+        const selectedNames = getSelectedFriendNames();
+        if (selectedNames.length === 0) {
+            return rows;
+        }
+        return rows.filter((row) => {
+            const owner = String(row.ownerDisplayName || row.ownerUsername || "");
+            return selectedNames.includes(owner);
+        });
+    }
+    const keyword = String(topScheduleSearchInput ? topScheduleSearchInput.value : "").trim().toLowerCase();
+    if (!keyword) {
+        return rows;
+    }
+    return rows.filter((row) => String(row.title || "").toLowerCase().includes(keyword));
+}
+
+function rebuildMonthMarkersFromFilter() {
+    const filteredRows = filterMonthRowsByTopFilter(state.rawMonthMarkerRows || []);
+    state.monthMarkersByDate = buildMonthMarkerMap(filteredRows);
+}
+
+function refillFriendFilterOptions(rows) {
+    if (!topFriendFilterSelect) {
+        return;
+    }
+    const prevSelected = new Set(getSelectedFriendNames());
+    const names = Array.from(new Set((Array.isArray(rows) ? rows : [])
+        .map((row) => String(row.ownerDisplayName || row.ownerUsername || "").trim())
+        .filter((name) => name !== "")))
+        .sort((a, b) => a.localeCompare(b, "ja"));
+    topFriendFilterSelect.innerHTML = "";
+    names.forEach((name) => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        option.selected = prevSelected.has(name);
+        topFriendFilterSelect.appendChild(option);
+    });
 }
 
 function focusScheduleCard(scheduleId) {
@@ -531,7 +685,9 @@ async function loadMonthMarkers() {
     const year = state.currentMonth.getFullYear();
     const month = state.currentMonth.getMonth() + 1;
     const rows = await fetchJson(`/api/schedules/month?year=${year}&month=${month}`);
-    state.monthMarkersByDate = buildMonthMarkerMap(rows);
+    state.rawMonthMarkerRows = Array.isArray(rows) ? rows : [];
+    refillFriendFilterOptions(state.rawMonthMarkerRows);
+    rebuildMonthMarkersFromFilter();
 }
 
 async function loadTitleSuggestions() {
@@ -1403,6 +1559,7 @@ function isSameDate(date, year, month, day) {
 }
 
 async function initializeCalendarPage() {
+    syncTopFilterControls();
     initializeVoiceInput();
     applyNotificationSettings();
     syncReminderTimer();

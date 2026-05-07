@@ -21,6 +21,25 @@
     <button type="submit">ログアウト</button>
 </form>
 <main class="app-shell" th:attr="data-today=${today},data-current-username=${currentUsername},data-current-display-name=${currentDisplayName}">
+    <section class="friend-section top-search-shell">
+        <h3>予定検索</h3>
+        <div class="inline-form">
+            <select id="topScheduleFilterType" style="max-width:220px;">
+                <option value="game">ゲーム名で検索</option>
+                <option value="friend">フレンド名で検索</option>
+            </select>
+            <button id="topScheduleResetButton" type="button" class="secondary">全部表示</button>
+        </div>
+        <div class="inline-form">
+            <input id="topScheduleSearchInput" type="text" maxlength="120" placeholder="ゲーム名・メモ・ランク帯・作成者で検索">
+        </div>
+        <div id="topFriendFilterWrap" hidden>
+            <label for="topFriendFilterSelect">対象フレンド（複数選択可）</label>
+            <select id="topFriendFilterSelect" multiple size="4"></select>
+        </div>
+        <p id="topScheduleSearchStatus" class="help-text"></p>
+    </section>
+
     <section class="calendar-pane">
         <header class="calendar-header">
             <div>
