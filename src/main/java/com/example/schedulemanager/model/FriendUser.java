@@ -4,6 +4,8 @@ public class FriendUser {
     private Long id;
     private String username;
     private String displayName;
+    private String profileIconColor;
+    private Boolean hasProfileImage;
     private Integer totalPoints;
     private Integer level;
 
@@ -45,5 +47,21 @@ public class FriendUser {
 
     public void setLevel(Integer level) {
         this.level = level;
+    }
+
+    public String getProfileIconColor() {
+        return profileIconColor;
+    }
+
+    public void setProfileIconColor(String profileIconColor) {
+        this.profileIconColor = profileIconColor;
+    }
+
+    public Boolean getHasProfileImage() {
+        return hasProfileImage;
+    }
+
+    public void setHasProfileImage(Boolean hasProfileImage) {
+        this.hasProfileImage = hasProfileImage;
     }
 }

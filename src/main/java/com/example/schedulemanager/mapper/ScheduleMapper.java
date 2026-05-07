@@ -251,7 +251,9 @@ public interface ScheduleMapper {
     boolean existsParticipant(@Param("scheduleId") Long scheduleId, @Param("userId") Long userId);
 
     @Select("""
-            SELECT u.id, u.username, u.display_name
+            SELECT u.id, u.username, u.display_name,
+                   u.profile_icon_color AS profile_icon_color,
+                   CASE WHEN u.profile_image_data IS NULL THEN FALSE ELSE TRUE END AS has_profile_image
             FROM schedule_participant sp
             INNER JOIN app_user u ON u.id = sp.participant_user_id
             WHERE sp.schedule_item_id = #{scheduleId}

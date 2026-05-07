@@ -948,7 +948,7 @@ function scheduleParticipationBadgeText(item) {
 }
 
 function renderParticipants(participants) {
-    const wrapper = document.createElement("p");
+    const wrapper = document.createElement("div");
     wrapper.className = "schedule-participants";
 
     if (!Array.isArray(participants) || participants.length === 0) {
@@ -956,8 +956,33 @@ function renderParticipants(participants) {
         return wrapper;
     }
 
-    const names = participants.map((user) => user.displayName || user.username || "不明");
-    wrapper.textContent = `参加中: ${names.join(" / ")}`;
+    const label = document.createElement("p");
+    label.textContent = "参加中:";
+    wrapper.appendChild(label);
+
+    const list = document.createElement("div");
+    list.className = "schedule-participant-list";
+    participants.forEach((user) => {
+        const item = document.createElement("div");
+        item.className = "schedule-participant-item";
+
+        const avatar = document.createElement("img");
+        const fallbackDataUrl = buildDefaultProfileDataUrl(user.profileIconColor);
+        avatar.alt = `${user.displayName || user.username || "参加者"}のアイコン`;
+        avatar.src = user.hasProfileImage && user.id
+            ? `/api/users/${user.id}/profile-image`
+            : fallbackDataUrl;
+        avatar.addEventListener("error", () => {
+            avatar.src = fallbackDataUrl;
+        });
+
+        const name = document.createElement("span");
+        name.textContent = user.displayName || user.username || "不明";
+
+        item.append(avatar, name);
+        list.appendChild(item);
+    });
+    wrapper.appendChild(list);
     return wrapper;
 }
 

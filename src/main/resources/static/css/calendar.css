@@ -826,6 +826,34 @@ body::after {
     color: var(--muted);
 }
 
+.schedule-participants p {
+    margin: 0 0 4px;
+}
+
+.schedule-participant-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.schedule-participant-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid #d6e5ff;
+    border-radius: 999px;
+    padding: 4px 8px 4px 4px;
+    background: #f8fbff;
+}
+
+.schedule-participant-item img {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #c8daf8;
+}
+
 .join-actions {
     margin-top: 8px;
     display: flex;
