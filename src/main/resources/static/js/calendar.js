@@ -32,7 +32,9 @@ const scheduleList = document.getElementById("scheduleList");
 const topScheduleSearchForm = document.getElementById("topScheduleSearchForm");
 const topScheduleSearchInput = document.getElementById("topScheduleSearchInput");
 const topScheduleSearchStatus = document.getElementById("topScheduleSearchStatus");
+const topScheduleGameSuggestions = document.getElementById("topScheduleGameSuggestions");
 const topScheduleFilterType = document.getElementById("topScheduleFilterType");
+const topScheduleOwnOnlyButton = document.getElementById("topScheduleOwnOnlyButton");
 const topScheduleResetButton = document.getElementById("topScheduleResetButton");
 const topFriendFilterWrap = document.getElementById("topFriendFilterWrap");
 const topFriendFilterSelect = document.getElementById("topFriendFilterSelect");
@@ -83,6 +85,7 @@ let descriptionSpeechRecognition = null;
 let titleSpeechRecognitionRunning = false;
 let descriptionSpeechRecognitionRunning = false;
 let latestSchedules = [];
+let ownOnlyMode = false;
 
 if (topScheduleSearchForm) {
     topScheduleSearchForm.addEventListener("submit", (event) => {
@@ -92,18 +95,26 @@ if (topScheduleSearchForm) {
 }
 if (topScheduleFilterType) {
     topScheduleFilterType.addEventListener("change", () => {
+        ownOnlyMode = false;
         syncTopFilterControls();
         applyScheduleFilters();
     });
 }
 if (topFriendFilterSelect) {
     topFriendFilterSelect.addEventListener("change", () => {
+        ownOnlyMode = false;
         applyScheduleFilters();
     });
 }
 if (topScheduleResetButton) {
     topScheduleResetButton.addEventListener("click", () => {
         resetTopScheduleFilters();
+        applyScheduleFilters();
+    });
+}
+if (topScheduleOwnOnlyButton) {
+    topScheduleOwnOnlyButton.addEventListener("click", () => {
+        ownOnlyMode = true;
         applyScheduleFilters();
     });
 }
@@ -579,6 +590,9 @@ function renderScheduleList(schedules) {
 }
 
 function filterSchedulesByTopFilter(schedules) {
+    if (ownOnlyMode) {
+        return schedules.filter((item) => item.ownerUsername === currentUsername);
+    }
     const mode = topScheduleFilterType ? topScheduleFilterType.value : "game";
     if (mode === "friend") {
         const selectedNames = getSelectedFriendNames();
@@ -619,6 +633,7 @@ function syncTopFilterControls() {
 }
 
 function resetTopScheduleFilters() {
+    ownOnlyMode = false;
     if (topScheduleFilterType) {
         topScheduleFilterType.value = "game";
     }
@@ -640,6 +655,9 @@ function applyScheduleFilters() {
 }
 
 function filterMonthRowsByTopFilter(rows) {
+    if (ownOnlyMode) {
+        return rows.filter((row) => row.ownerUsername === currentUsername);
+    }
     const mode = topScheduleFilterType ? topScheduleFilterType.value : "game";
     if (mode === "friend") {
         const selectedNames = getSelectedFriendNames();
@@ -717,10 +735,18 @@ async function loadTitleSuggestions() {
         .filter((title, index, array) => title !== "" && array.indexOf(title) === index);
 
     titleSuggestions.innerHTML = "";
+    if (topScheduleGameSuggestions) {
+        topScheduleGameSuggestions.innerHTML = "";
+    }
     merged.forEach((title) => {
         const option = document.createElement("option");
         option.value = title;
         titleSuggestions.appendChild(option);
+        if (topScheduleGameSuggestions) {
+            const topOption = document.createElement("option");
+            topOption.value = title;
+            topScheduleGameSuggestions.appendChild(topOption);
+        }
     });
 }
 

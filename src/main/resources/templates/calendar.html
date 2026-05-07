@@ -28,10 +28,12 @@
                 <option value="game">ゲーム名で検索</option>
                 <option value="friend">フレンド名で検索</option>
             </select>
+            <button id="topScheduleOwnOnlyButton" type="button" class="secondary">自分の予定のみ</button>
             <button id="topScheduleResetButton" type="button" class="secondary">全部表示</button>
         </div>
         <form id="topScheduleSearchForm" class="inline-form">
-            <input id="topScheduleSearchInput" type="text" maxlength="120" placeholder="ゲーム名・メモ・ランク帯・作成者で検索">
+            <input id="topScheduleSearchInput" type="text" maxlength="120" list="topScheduleGameSuggestions" placeholder="ゲーム名・メモ・ランク帯・作成者で検索">
+            <datalist id="topScheduleGameSuggestions"></datalist>
             <button type="submit" class="secondary">検索</button>
         </form>
         <div id="topFriendFilterWrap" hidden>
