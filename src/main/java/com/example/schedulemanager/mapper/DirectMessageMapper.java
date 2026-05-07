@@ -58,4 +58,12 @@ public interface DirectMessageMapper {
               AND is_read = FALSE
             """)
     int markAllReceivedAsRead(@Param("userId") Long userId);
+
+    @Select("""
+            SELECT COUNT(*)
+            FROM direct_message
+            WHERE recipient_user_id = #{userId}
+              AND is_read = FALSE
+            """)
+    int countUnreadByRecipient(@Param("userId") Long userId);
 }

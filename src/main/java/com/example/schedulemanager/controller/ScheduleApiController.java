@@ -2,6 +2,7 @@ package com.example.schedulemanager.controller;
 
 import com.example.schedulemanager.dto.ScheduleRequest;
 import com.example.schedulemanager.dto.ScheduleCsvImportResult;
+import com.example.schedulemanager.dto.ScheduleJoinRequestCreateRequest;
 import com.example.schedulemanager.model.ScheduleItem;
 import com.example.schedulemanager.service.ScheduleService;
 import java.nio.charset.StandardCharsets;
@@ -103,8 +104,9 @@ public class ScheduleApiController {
     @PostMapping("/{id}/join")
     public ResponseEntity<Void> join(
             @PathVariable("id") Long id,
+            @RequestBody(required = false) ScheduleJoinRequestCreateRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
-        scheduleService.join(id, userDetails.getUsername());
+        scheduleService.join(id, userDetails.getUsername(), request);
         return ResponseEntity.noContent().build();
     }
 
@@ -113,6 +115,24 @@ public class ScheduleApiController {
             @PathVariable("id") Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
         scheduleService.cancelJoin(id, userDetails.getUsername());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/join-requests/{joinRequestId}/approve")
+    public ResponseEntity<Void> approveJoinRequest(
+            @PathVariable("id") Long id,
+            @PathVariable("joinRequestId") Long joinRequestId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        scheduleService.decideJoinRequest(id, joinRequestId, true, userDetails.getUsername());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/join-requests/{joinRequestId}/reject")
+    public ResponseEntity<Void> rejectJoinRequest(
+            @PathVariable("id") Long id,
+            @PathVariable("joinRequestId") Long joinRequestId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        scheduleService.decideJoinRequest(id, joinRequestId, false, userDetails.getUsername());
         return ResponseEntity.noContent().build();
     }
 

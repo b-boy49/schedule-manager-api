@@ -117,6 +117,18 @@ async function loadMessages(conversationId) {
         const sender = row.senderUsername || "unknown";
         const direction = sender === currentUsername ? "送信" : "受信";
         li.textContent = `${formatDateTime(row.createdAt)} [${direction}] ${sender}: ${row.body || ""}`;
+        const targetUserId = sender === currentUsername ? row.recipientUserId : row.senderUserId;
+        const targetUsername = sender === currentUsername ? row.recipientUsername : row.senderUsername;
+        if (targetUserId && targetUsername !== currentUsername) {
+            const reportButton = document.createElement("button");
+            reportButton.type = "button";
+            reportButton.className = "secondary";
+            reportButton.textContent = "通報";
+            reportButton.addEventListener("click", async () => {
+                await reportUser(targetUserId, "DM", row.id);
+            });
+            li.appendChild(reportButton);
+        }
         messageList.appendChild(li);
     });
 }
@@ -214,3 +226,29 @@ initialize().catch((error) => {
     setError(error.message);
     clearConversationSelection();
 });
+
+async function reportUser(targetUserId, sourceType, sourceId) {
+    const categoryInput = window.prompt(
+        "通報カテゴリを入力してください: HARASSMENT / HATE_SPEECH / SPAM / SEXUAL / VIOLENCE / OTHER"
+    );
+    if (!categoryInput) {
+        return;
+    }
+    const category = String(categoryInput).trim().toUpperCase();
+    const note = window.prompt("備考を入力してください（5文字以上）");
+    if (!note) {
+        return;
+    }
+    try {
+        await fetchJson("/api/reports", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ targetUserId, sourceType, sourceId, category, note })
+        });
+        dmMessage.style.color = "#087057";
+        dmMessage.textContent = "通報を送信しました。";
+    } catch (error) {
+        dmMessage.style.color = "#be2f2f";
+        dmMessage.textContent = error.message;
+    }
+}

@@ -34,6 +34,9 @@ public class ScheduleItem {
     private Integer remainingRecruitmentSlots;
     private Boolean recruitmentClosed;
     private Boolean joinedByCurrentUser;
+    private String joinRequestStatusForCurrentUser;
+    private String joinRequestCommentForCurrentUser;
+    private java.util.List<ScheduleJoinRequest> pendingJoinRequests;
     private List<FriendUser> participants;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -268,6 +271,30 @@ public class ScheduleItem {
 
     public void setParticipants(List<FriendUser> participants) {
         this.participants = participants;
+    }
+
+    public String getJoinRequestStatusForCurrentUser() {
+        return joinRequestStatusForCurrentUser;
+    }
+
+    public void setJoinRequestStatusForCurrentUser(String joinRequestStatusForCurrentUser) {
+        this.joinRequestStatusForCurrentUser = joinRequestStatusForCurrentUser;
+    }
+
+    public String getJoinRequestCommentForCurrentUser() {
+        return joinRequestCommentForCurrentUser;
+    }
+
+    public void setJoinRequestCommentForCurrentUser(String joinRequestCommentForCurrentUser) {
+        this.joinRequestCommentForCurrentUser = joinRequestCommentForCurrentUser;
+    }
+
+    public java.util.List<ScheduleJoinRequest> getPendingJoinRequests() {
+        return pendingJoinRequests;
+    }
+
+    public void setPendingJoinRequests(java.util.List<ScheduleJoinRequest> pendingJoinRequests) {
+        this.pendingJoinRequests = pendingJoinRequests;
     }
 
     public LocalDateTime getCreatedAt() {

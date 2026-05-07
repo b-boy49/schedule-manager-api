@@ -189,7 +189,11 @@ function renderFriendListWithNotification(list) {
 
     list.forEach((friend) => {
         const li = document.createElement("li");
-        li.textContent = `${friend.displayName} (@${friend.username}) `;
+        const profileLink = document.createElement("a");
+        profileLink.href = `/friends/profile/${encodeURIComponent(friend.username || "")}`;
+        profileLink.textContent = `${friend.displayName} (@${friend.username})`;
+        li.appendChild(profileLink);
+        li.appendChild(document.createTextNode(" "));
 
         const notifyButton = document.createElement("button");
         notifyButton.type = "button";

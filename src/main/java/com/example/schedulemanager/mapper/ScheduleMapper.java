@@ -2,6 +2,7 @@ package com.example.schedulemanager.mapper;
 
 import com.example.schedulemanager.model.ScheduleItem;
 import com.example.schedulemanager.model.FriendUser;
+import com.example.schedulemanager.model.ScheduleJoinRequest;
 import com.example.schedulemanager.model.TaskCompletionRankingRow;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -279,6 +280,77 @@ public interface ScheduleMapper {
               AND participant_user_id = #{userId}
             """)
     int deleteParticipant(@Param("scheduleId") Long scheduleId, @Param("userId") Long userId);
+
+    @Select("""
+            SELECT COUNT(*)
+            FROM schedule_join_request jr
+            JOIN schedule_item s ON s.id = jr.schedule_item_id
+            WHERE s.owner_user_id = #{ownerUserId}
+              AND jr.status = 'PENDING'
+            """)
+    int countPendingJoinRequestsForOwner(@Param("ownerUserId") Long ownerUserId);
+
+    @Select("""
+            SELECT id, schedule_item_id, requester_user_id, comment, status, created_at, updated_at
+            FROM schedule_join_request
+            WHERE schedule_item_id = #{scheduleId}
+              AND requester_user_id = #{requesterUserId}
+            """)
+    ScheduleJoinRequest findJoinRequestByScheduleAndRequester(
+            @Param("scheduleId") Long scheduleId,
+            @Param("requesterUserId") Long requesterUserId);
+
+    @Select("""
+            SELECT jr.id, jr.schedule_item_id, jr.requester_user_id,
+                   u.username AS requester_username,
+                   u.display_name AS requester_display_name,
+                   u.profile_icon_color AS requester_profile_icon_color,
+                   CASE WHEN u.profile_image_data IS NULL THEN FALSE ELSE TRUE END AS requester_has_profile_image,
+                   jr.comment, jr.status, jr.created_at, jr.updated_at
+            FROM schedule_join_request jr
+            JOIN app_user u ON u.id = jr.requester_user_id
+            WHERE jr.schedule_item_id = #{scheduleId}
+              AND jr.status = 'PENDING'
+            ORDER BY jr.created_at ASC, jr.id ASC
+            """)
+    List<ScheduleJoinRequest> findPendingJoinRequestsBySchedule(@Param("scheduleId") Long scheduleId);
+
+    @Insert("""
+            INSERT INTO schedule_join_request (schedule_item_id, requester_user_id, comment, status)
+            VALUES (#{scheduleId}, #{requesterUserId}, #{comment}, #{status})
+            """)
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int insertJoinRequest(
+            @Param("scheduleId") Long scheduleId,
+            @Param("requesterUserId") Long requesterUserId,
+            @Param("comment") String comment,
+            @Param("status") String status);
+
+    @Update("""
+            UPDATE schedule_join_request
+            SET comment = #{comment},
+                status = #{status},
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = #{id}
+            """)
+    int updateJoinRequest(
+            @Param("id") Long id,
+            @Param("comment") String comment,
+            @Param("status") String status);
+
+    @Update("""
+            UPDATE schedule_join_request
+            SET status = #{status},
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = #{id}
+            """)
+    int updateJoinRequestStatus(@Param("id") Long id, @Param("status") String status);
+
+    @Delete("""
+            DELETE FROM schedule_join_request
+            WHERE schedule_item_id = #{scheduleId}
+            """)
+    int deleteJoinRequestsBySchedule(@Param("scheduleId") Long scheduleId);
 
     @Select("""
             SELECT COUNT(*) > 0

@@ -10,11 +10,11 @@
 <header class="page-hero">
     <h1 th:text="${currentDisplayName + 'の募集掲示板'}"></h1>
     <nav class="hero-nav" aria-label="メインメニュー">
-        <a href="/calendar">トップ</a>
+        <a href="/calendar" data-nav-badge="calendar" data-nav-label="トップ">トップ</a>
         <a href="/board">募集掲示板</a>
-        <a href="/friends">フレンド</a>
+        <a href="/friends" data-nav-badge="friends" data-nav-label="フレンド">フレンド</a>
         <a href="/profile">ユーザー編集</a>
-        <a href="/dm">✉ DM</a>
+        <a href="/dm" data-nav-badge="dm" data-nav-label="✉ DM">✉ DM</a>
     </nav>
 </header>
 <form method="post" action="/logout" class="logout-floating">

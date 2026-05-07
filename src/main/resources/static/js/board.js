@@ -225,6 +225,17 @@ function renderPostSummaries() {
             await selectPost(post);
         });
         li.appendChild(button);
+
+        if (post.authorUserId && post.authorUsername !== currentUsername) {
+            const reportButton = document.createElement("button");
+            reportButton.type = "button";
+            reportButton.className = "secondary";
+            reportButton.textContent = "通報";
+            reportButton.addEventListener("click", async () => {
+                await reportUser(post.authorUserId, "BOARD_POST", post.id);
+            });
+            li.appendChild(reportButton);
+        }
         postSummaryList.appendChild(li);
     });
 }
@@ -259,6 +270,16 @@ async function loadInterests(postId) {
         const li = document.createElement("li");
         const name = interest.requesterDisplayName || interest.requesterUsername || "不明";
         li.textContent = `${name}: ${interest.comment}`;
+        if (interest.requesterUserId && interest.requesterUsername !== currentUsername) {
+            const reportButton = document.createElement("button");
+            reportButton.type = "button";
+            reportButton.className = "secondary";
+            reportButton.textContent = "通報";
+            reportButton.addEventListener("click", async () => {
+                await reportUser(interest.requesterUserId, "BOARD_INTEREST", interest.id);
+            });
+            li.appendChild(reportButton);
+        }
         interestList.appendChild(li);
     });
 }
@@ -365,6 +386,38 @@ function setBoardMode(mode) {
     }
     if (postListSection) {
         postListSection.hidden = showCreate;
+    }
+}
+
+async function reportUser(targetUserId, sourceType, sourceId) {
+    const categoryInput = window.prompt(
+        "通報カテゴリを入力してください: HARASSMENT / HATE_SPEECH / SPAM / SEXUAL / VIOLENCE / OTHER"
+    );
+    if (!categoryInput) {
+        return;
+    }
+    const category = String(categoryInput).trim().toUpperCase();
+    const note = window.prompt("備考を入力してください（5文字以上）");
+    if (!note) {
+        return;
+    }
+    try {
+        await fetchJson("/api/reports", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                targetUserId,
+                sourceType,
+                sourceId,
+                category,
+                note
+            })
+        });
+        boardMessage.style.color = "#087057";
+        boardMessage.textContent = "通報を送信しました。";
+    } catch (error) {
+        boardMessage.style.color = "#be2f2f";
+        boardMessage.textContent = error.message;
     }
 }
 

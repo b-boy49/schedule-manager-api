@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>フレンドプロフィール | ゲーム予定</title>
+    <link rel="stylesheet" href="/css/calendar.css">
+</head>
+<body th:style="${labelColorStyle}">
+<header class="page-hero">
+    <h1>フレンドプロフィール</h1>
+    <nav class="hero-nav" aria-label="メインメニュー">
+        <a href="/calendar" data-nav-badge="calendar" data-nav-label="トップ">トップ</a>
+        <a href="/board">募集掲示板</a>
+        <a href="/friends" data-nav-badge="friends" data-nav-label="フレンド">フレンド</a>
+        <a href="/profile">ユーザー編集</a>
+        <a href="/dm" data-nav-badge="dm" data-nav-label="✉ DM">✉ DM</a>
+    </nav>
+</header>
+<form method="post" action="/logout" class="logout-floating">
+    <button type="submit">ログアウト</button>
+</form>
+<main class="app-shell friends-shell">
+    <section class="schedule-pane friend-section">
+        <h2 th:text="${friend.displayName + ' (@' + friend.username + ')'}"></h2>
+        <p th:text="${friend.profileBio != null && !friend.profileBio.isBlank() ? friend.profileBio : '自己紹介は未設定です。'}"></p>
+        <p><strong>配信URL:</strong> <span th:text="${friend.streamUrl != null ? friend.streamUrl : '未設定'}"></span></p>
+        <p><strong>X URL:</strong> <span th:text="${friend.xUrl != null ? friend.xUrl : '未設定'}"></span></p>
+        <p><a href="/friends">フレンド一覧に戻る</a></p>
+    </section>
+</main>
+<script src="/js/theme.js"></script>
+<script src="/js/nav-badges.js"></script>
+</body>
+</html>

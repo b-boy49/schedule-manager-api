@@ -79,4 +79,11 @@ public interface UserMapper {
             WHERE id = #{userId}
             """)
     int addPoints(@org.apache.ibatis.annotations.Param("userId") Long userId, @org.apache.ibatis.annotations.Param("points") int points);
+
+    @Update("""
+            UPDATE app_user
+            SET enabled = #{enabled}
+            WHERE id = #{userId}
+            """)
+    int updateEnabled(@org.apache.ibatis.annotations.Param("userId") Long userId, @org.apache.ibatis.annotations.Param("enabled") boolean enabled);
 }

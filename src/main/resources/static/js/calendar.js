@@ -994,7 +994,55 @@ function renderJoinAction(item) {
         const ownerHint = document.createElement("span");
         ownerHint.textContent = "あなたが募集主です";
         actionArea.appendChild(ownerHint);
+        const pending = Array.isArray(item.pendingJoinRequests) ? item.pendingJoinRequests : [];
+        if (pending.length > 0) {
+            const pendingWrap = document.createElement("div");
+            pendingWrap.className = "schedule-participants";
+            const label = document.createElement("p");
+            label.textContent = `参加希望（保留）${pending.length}件`;
+            pendingWrap.appendChild(label);
+            pending.forEach((request) => {
+                const row = document.createElement("div");
+                row.className = "schedule-participant-item";
+                const name = document.createElement("span");
+                name.textContent = `${request.requesterDisplayName || request.requesterUsername || "不明"}: ${request.comment || ""}`;
+                const approveButton = document.createElement("button");
+                approveButton.type = "button";
+                approveButton.className = "primary";
+                approveButton.textContent = "了承";
+                approveButton.addEventListener("click", async () => {
+                    try {
+                        await fetchJson(`/api/schedules/${item.id}/join-requests/${request.id}/approve`, { method: "POST" });
+                        await loadSchedules(state.selectedDate);
+                    } catch (error) {
+                        formMessage.textContent = error.message;
+                    }
+                });
+                const rejectButton = document.createElement("button");
+                rejectButton.type = "button";
+                rejectButton.className = "secondary";
+                rejectButton.textContent = "見送り";
+                rejectButton.addEventListener("click", async () => {
+                    try {
+                        await fetchJson(`/api/schedules/${item.id}/join-requests/${request.id}/reject`, { method: "POST" });
+                        await loadSchedules(state.selectedDate);
+                    } catch (error) {
+                        formMessage.textContent = error.message;
+                    }
+                });
+                row.append(name, approveButton, rejectButton);
+                pendingWrap.appendChild(row);
+            });
+            actionArea.appendChild(pendingWrap);
+        }
         return actionArea;
+    }
+
+    if (item.joinRequestStatusForCurrentUser === "PENDING") {
+        const pendingLabel = document.createElement("span");
+        pendingLabel.className = "closed-label";
+        pendingLabel.textContent = "参加希望を送信済み（保留中）";
+        actionArea.appendChild(pendingLabel);
     }
 
     if (item.recruitmentClosed && !item.joinedByCurrentUser) {
@@ -1008,13 +1056,23 @@ function renderJoinAction(item) {
     const joinButton = document.createElement("button");
     joinButton.type = "button";
     joinButton.className = item.joinedByCurrentUser ? "leave-btn" : "join-btn";
-    joinButton.textContent = item.joinedByCurrentUser ? "参加を取り消す" : "この枠に参加する";
+    joinButton.textContent = item.joinedByCurrentUser
+        ? "参加を取り消す"
+        : (item.joinRequestStatusForCurrentUser === "PENDING" ? "参加希望コメントを更新" : "この枠に参加する");
     joinButton.addEventListener("click", async () => {
         try {
             if (item.joinedByCurrentUser) {
                 await fetchJson(`/api/schedules/${item.id}/join`, { method: "DELETE" });
             } else {
-                await fetchJson(`/api/schedules/${item.id}/join`, { method: "POST" });
+                const comment = window.prompt("参加希望コメントを入力してください（例: 21:00から参加できます）", item.joinRequestCommentForCurrentUser || "");
+                if (!comment) {
+                    return;
+                }
+                await fetchJson(`/api/schedules/${item.id}/join`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ comment })
+                });
             }
             await loadSchedules(state.selectedDate);
         } catch (error) {

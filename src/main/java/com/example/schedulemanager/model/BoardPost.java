@@ -7,6 +7,7 @@ import java.time.LocalTime;
 public class BoardPost {
     private Long id;
     private Long threadId;
+    private String gameTitle;
     private Long authorUserId;
     private String authorUsername;
     private String authorDisplayName;
@@ -31,6 +32,14 @@ public class BoardPost {
 
     public void setThreadId(Long threadId) {
         this.threadId = threadId;
+    }
+
+    public String getGameTitle() {
+        return gameTitle;
+    }
+
+    public void setGameTitle(String gameTitle) {
+        this.gameTitle = gameTitle;
     }
 
     public Long getAuthorUserId() {
