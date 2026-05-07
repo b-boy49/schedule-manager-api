@@ -1,11 +1,13 @@
 package com.example.schedulemanager.service;
 
 import com.example.schedulemanager.dto.BoardRecruitmentCreateRequest;
+import com.example.schedulemanager.dto.BoardPostInterestCreateRequest;
 import com.example.schedulemanager.dto.BoardThreadCreateRequest;
 import com.example.schedulemanager.mapper.BoardMapper;
 import com.example.schedulemanager.mapper.UserMapper;
 import com.example.schedulemanager.model.AppUser;
 import com.example.schedulemanager.model.BoardPost;
+import com.example.schedulemanager.model.BoardPostInterest;
 import com.example.schedulemanager.model.BoardThread;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -80,6 +82,10 @@ public class BoardService {
 
         LocalDate scheduleDate = parseDate(request.getScheduleDate());
         LocalTime startTime = parseTime(request.getStartTime());
+        String rankBand = normalize(request.getRankBand());
+        if (rankBand != null && rankBand.length() > 100) {
+            throw new IllegalArgumentException("ランクは100文字以内で入力してください。");
+        }
         Integer recruitmentLimit = request.getRecruitmentLimit();
         if (recruitmentLimit != null && recruitmentLimit < 1) {
             throw new IllegalArgumentException("募集人数は1以上で指定してください。");
@@ -92,6 +98,7 @@ public class BoardService {
         post.setBody(body);
         post.setScheduleDate(scheduleDate);
         post.setStartTime(startTime);
+        post.setRankBand(rankBand);
         post.setRecruitmentLimit(recruitmentLimit);
         boardMapper.insertPost(post);
         boardMapper.touchThreadUpdatedAt(threadId);
@@ -102,6 +109,43 @@ public class BoardService {
                 .orElseThrow(() -> new NoSuchElementException("作成した募集投稿の取得に失敗しました。"));
     }
 
+    @Transactional(readOnly = true)
+    public List<BoardPostInterest> listInterests(Long postId) {
+        ensurePostExists(postId);
+        return boardMapper.findInterestsByPostId(postId);
+    }
+
+    @Transactional
+    public BoardPostInterest createInterest(Long postId, BoardPostInterestCreateRequest request, String username) {
+        BoardPost post = ensurePostExists(postId);
+        if (request == null) {
+            throw new IllegalArgumentException("参加希望コメントが空です。");
+        }
+        String comment = normalize(request.getComment());
+        if (comment == null || comment.isBlank()) {
+            throw new IllegalArgumentException("参加希望コメントを入力してください。");
+        }
+        if (comment.length() > 500) {
+            throw new IllegalArgumentException("参加希望コメントは500文字以内で入力してください。");
+        }
+
+        AppUser user = findCurrentUser(username);
+        if (post.getAuthorUserId() != null && post.getAuthorUserId().equals(user.getId())) {
+            throw new IllegalArgumentException("自分の募集には参加希望を送信できません。");
+        }
+
+        BoardPostInterest interest = new BoardPostInterest();
+        interest.setPostId(postId);
+        interest.setRequesterUserId(user.getId());
+        interest.setComment(comment);
+        boardMapper.insertPostInterest(interest);
+
+        return boardMapper.findInterestsByPostId(postId).stream()
+                .filter(row -> row.getId().equals(interest.getId()))
+                .findFirst()
+                .orElseThrow(() -> new NoSuchElementException("作成した参加希望の取得に失敗しました。"));
+    }
+
     private void ensureThreadExists(Long threadId) {
         if (threadId == null) {
             throw new IllegalArgumentException("スレッドIDが不正です。");
@@ -110,6 +154,17 @@ public class BoardService {
         if (existing == null) {
             throw new NoSuchElementException("指定されたスレッドが見つかりません。");
         }
+    }
+
+    private BoardPost ensurePostExists(Long postId) {
+        if (postId == null) {
+            throw new IllegalArgumentException("投稿IDが不正です。");
+        }
+        BoardPost existing = boardMapper.findPostById(postId);
+        if (existing == null) {
+            throw new NoSuchElementException("指定された投稿が見つかりません。");
+        }
+        return existing;
     }
 
     private AppUser findCurrentUser(String username) {

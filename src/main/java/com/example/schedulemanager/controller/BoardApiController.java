@@ -1,8 +1,10 @@
 package com.example.schedulemanager.controller;
 
 import com.example.schedulemanager.dto.BoardRecruitmentCreateRequest;
+import com.example.schedulemanager.dto.BoardPostInterestCreateRequest;
 import com.example.schedulemanager.dto.BoardThreadCreateRequest;
 import com.example.schedulemanager.model.BoardPost;
+import com.example.schedulemanager.model.BoardPostInterest;
 import com.example.schedulemanager.model.BoardThread;
 import com.example.schedulemanager.service.BoardService;
 import java.util.List;
@@ -52,5 +54,19 @@ public class BoardApiController {
             @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(boardService.createRecruitment(threadId, request, userDetails.getUsername()));
+    }
+
+    @GetMapping("/posts/{postId}/interests")
+    public List<BoardPostInterest> listInterests(@PathVariable("postId") Long postId) {
+        return boardService.listInterests(postId);
+    }
+
+    @PostMapping("/posts/{postId}/interests")
+    public ResponseEntity<BoardPostInterest> createInterest(
+            @PathVariable("postId") Long postId,
+            @RequestBody BoardPostInterestCreateRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(boardService.createInterest(postId, request, userDetails.getUsername()));
     }
 }

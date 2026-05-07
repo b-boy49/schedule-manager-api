@@ -1,6 +1,7 @@
 package com.example.schedulemanager.mapper;
 
 import com.example.schedulemanager.model.BoardPost;
+import com.example.schedulemanager.model.BoardPostInterest;
 import com.example.schedulemanager.model.BoardThread;
 import java.util.List;
 import org.apache.ibatis.annotations.Insert;
@@ -61,21 +62,47 @@ public interface BoardMapper {
     BoardThread findThreadViewById(@Param("threadId") Long threadId);
 
     @Insert("""
-            INSERT INTO board_post (thread_id, author_user_id, body, schedule_date, start_time, recruitment_limit)
-            VALUES (#{threadId}, #{authorUserId}, #{body}, #{scheduleDate}, #{startTime}, #{recruitmentLimit})
+            INSERT INTO board_post (thread_id, author_user_id, body, schedule_date, start_time, rank_band, recruitment_limit)
+            VALUES (#{threadId}, #{authorUserId}, #{body}, #{scheduleDate}, #{startTime}, #{rankBand}, #{recruitmentLimit})
             """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertPost(BoardPost post);
 
     @Select("""
             SELECT bp.id, bp.thread_id, bp.author_user_id, u.username AS author_username, u.display_name AS author_display_name,
-                   bp.body, bp.schedule_date, bp.start_time, bp.recruitment_limit, bp.created_at
+                   bp.body, bp.schedule_date, bp.start_time, bp.rank_band, bp.recruitment_limit, bp.created_at
             FROM board_post bp
             JOIN app_user u ON u.id = bp.author_user_id
             WHERE bp.thread_id = #{threadId}
             ORDER BY bp.created_at DESC, bp.id DESC
             """)
     List<BoardPost> findPostsByThreadId(@Param("threadId") Long threadId);
+
+    @Select("""
+            SELECT bp.id, bp.thread_id, bp.author_user_id, u.username AS author_username, u.display_name AS author_display_name,
+                   bp.body, bp.schedule_date, bp.start_time, bp.rank_band, bp.recruitment_limit, bp.created_at
+            FROM board_post bp
+            JOIN app_user u ON u.id = bp.author_user_id
+            WHERE bp.id = #{postId}
+            """)
+    BoardPost findPostById(@Param("postId") Long postId);
+
+    @Insert("""
+            INSERT INTO board_post_interest (post_id, requester_user_id, comment)
+            VALUES (#{postId}, #{requesterUserId}, #{comment})
+            """)
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int insertPostInterest(BoardPostInterest interest);
+
+    @Select("""
+            SELECT bpi.id, bpi.post_id, bpi.requester_user_id, u.username AS requester_username,
+                   u.display_name AS requester_display_name, bpi.comment, bpi.created_at
+            FROM board_post_interest bpi
+            JOIN app_user u ON u.id = bpi.requester_user_id
+            WHERE bpi.post_id = #{postId}
+            ORDER BY bpi.created_at DESC, bpi.id DESC
+            """)
+    List<BoardPostInterest> findInterestsByPostId(@Param("postId") Long postId);
 
     @Update("""
             UPDATE board_thread

@@ -13,6 +13,7 @@ public class BoardPost {
     private String body;
     private LocalDate scheduleDate;
     private LocalTime startTime;
+    private String rankBand;
     private Integer recruitmentLimit;
     private LocalDateTime createdAt;
 
@@ -86,6 +87,14 @@ public class BoardPost {
 
     public void setRecruitmentLimit(Integer recruitmentLimit) {
         this.recruitmentLimit = recruitmentLimit;
+    }
+
+    public String getRankBand() {
+        return rankBand;
+    }
+
+    public void setRankBand(String rankBand) {
+        this.rankBand = rankBand;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -28,57 +28,82 @@
             <h2>ゲーム募集掲示板</h2>
         </header>
 
-        <section class="friend-section">
+        <section class="friend-section board-entry-section">
+            <h3>進みたい項目を選択</h3>
+            <div class="board-entry-cards">
+                <button id="openCreateThreadCard" type="button" class="board-entry-card">
+                    <span class="board-entry-title">スレッド作成</span>
+                    <span class="board-entry-text">新しいゲーム募集スレッドを作る</span>
+                </button>
+                <button id="openThreadListCard" type="button" class="board-entry-card">
+                    <span class="board-entry-title">スレッド一覧</span>
+                    <span class="board-entry-text">既存スレッドを検索して開く</span>
+                </button>
+            </div>
+        </section>
+
+        <section id="createThreadSection" class="friend-section">
             <h3>新しいゲームスレッドを作成</h3>
-            <form id="threadForm" class="inline-form">
-                <input id="threadGameTitle" type="text" maxlength="200" placeholder="例: モンハンワイルズ" required>
-                <button type="submit" class="primary">スレッド作成</button>
+            <form id="threadForm" class="schedule-form">
+                <label for="threadGameTitle">ゲームタイトル</label>
+                <input id="threadGameTitle" type="text" maxlength="200" placeholder="例: モンハンワイルズ" list="threadGameTitleSuggestions" autocomplete="off" required>
+                <datalist id="threadGameTitleSuggestions"></datalist>
+
+                <label for="threadFirstPostBody">募集内容</label>
+                <textarea id="threadFirstPostBody" rows="4" maxlength="1000" placeholder="例: 21時から2人募集します" required></textarea>
+
+                <label for="threadFirstPostScheduleDate">予定日（任意）</label>
+                <input id="threadFirstPostScheduleDate" type="date">
+
+                <label for="threadFirstPostStartTime">開始時刻（任意）</label>
+                <input id="threadFirstPostStartTime" type="time">
+
+                <label for="threadFirstPostRankBand">ランク（任意）</label>
+                <input id="threadFirstPostRankBand" type="text" maxlength="100" placeholder="例: ダイヤ4 / プラチナ帯">
+
+                <label for="threadFirstPostRecruitmentLimit">募集人数（任意）</label>
+                <input id="threadFirstPostRecruitmentLimit" type="number" min="1" step="1" placeholder="例: 2">
+
+                <div class="form-actions">
+                    <button type="submit" class="primary">スレッドと募集を作成</button>
+                </div>
             </form>
             <p id="boardMessage" class="form-message" aria-live="polite"></p>
         </section>
 
-        <section class="friend-section">
-            <h3>スレッド一覧</h3>
+        <section id="threadListSection" class="friend-section" hidden>
+            <h3>ゲーム一覧</h3>
             <form method="get" action="/board" class="inline-form" style="margin-bottom:10px;">
-                <input type="text" name="keyword" placeholder="タイトルで検索" th:value="${keyword}">
+                <input id="threadSearchKeyword" type="text" name="keyword" placeholder="タイトルで検索" list="threadSearchSuggestions" autocomplete="off" th:value="${keyword}">
+                <datalist id="threadSearchSuggestions"></datalist>
                 <button type="submit" class="secondary">検索</button>
                 <a href="/board" class="secondary auth-link-button" style="width:auto;min-width:84px;margin-top:0;">クリア</a>
             </form>
             <p class="help-text" th:text="'検索結果: ' + ${threadSearchResultCount} + '件'"></p>
-            <ul id="threadList" class="mini-list">
-                <li th:if="${#lists.isEmpty(threads)}">スレッドはありません。</li>
-                <li th:each="thread : ${threads}">
-                    <span th:text="${thread.gameTitle + ' | 作成者: ' + (thread.ownerDisplayName != null ? thread.ownerDisplayName : thread.ownerUsername) + ' | 投稿: ' + thread.postCount + '件'}"></span>
-                    <button type="button" class="secondary"
-                            th:attr="data-thread-id=${thread.id},data-thread-title=${thread.gameTitle}">開く</button>
-                </li>
-            </ul>
+            <div id="gameCardList" class="board-game-cards"></div>
         </section>
 
-        <section class="friend-section">
-            <h3 id="selectedThreadLabel">スレッドを選択してください</h3>
-            <form id="postForm" class="schedule-form">
-                <label for="postBody">投稿内容</label>
-                <textarea id="postBody" rows="4" maxlength="1000" placeholder="例: 21時から2人募集します" required></textarea>
-
-                <label for="postScheduleDate">予定日（任意）</label>
-                <input id="postScheduleDate" type="date">
-
-                <label for="postStartTime">開始時刻（任意）</label>
-                <input id="postStartTime" type="time">
-
-                <label for="postRecruitmentLimit">募集人数（任意）</label>
-                <input id="postRecruitmentLimit" type="number" min="1" step="1" placeholder="例: 2">
-
-                <div class="form-actions">
-                    <button type="submit" class="primary">投稿を送信</button>
-                </div>
-            </form>
+        <section id="postEditorSection" class="friend-section" hidden>
+            <h3 id="selectedThreadLabel">ゲームを選択してください</h3>
+            <ul id="postSummaryList" class="mini-list"></ul>
         </section>
 
-        <section class="friend-section">
-            <h3>投稿一覧</h3>
-            <ul id="postList" class="mini-list"></ul>
+        <section id="postListSection" class="friend-section" hidden>
+            <h3>投稿詳細</h3>
+            <div id="postDetailEmpty" class="help-text">投稿を選択すると詳細が表示されます。</div>
+            <div id="postDetailPanel" hidden>
+                <p id="postDetailMeta" class="help-text"></p>
+                <p id="postDetailBody"></p>
+                <form id="interestForm" class="schedule-form">
+                    <label for="interestComment">参加希望コメント</label>
+                    <textarea id="interestComment" rows="3" maxlength="500" placeholder="例: 参加希望です。21:00から入れます。" required></textarea>
+                    <div class="form-actions">
+                        <button id="interestSubmitButton" type="submit" class="primary">参加希望を送信</button>
+                    </div>
+                </form>
+                <h4>参加希望コメント一覧</h4>
+                <ul id="interestList" class="mini-list"></ul>
+            </div>
         </section>
     </section>
 </main>

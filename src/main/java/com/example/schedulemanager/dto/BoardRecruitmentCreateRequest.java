@@ -4,6 +4,7 @@ public class BoardRecruitmentCreateRequest {
     private String body;
     private String scheduleDate;
     private String startTime;
+    private String rankBand;
     private Integer recruitmentLimit;
 
     public String getBody() {
@@ -36,5 +37,13 @@ public class BoardRecruitmentCreateRequest {
 
     public void setRecruitmentLimit(Integer recruitmentLimit) {
         this.recruitmentLimit = recruitmentLimit;
+    }
+
+    public String getRankBand() {
+        return rankBand;
+    }
+
+    public void setRankBand(String rankBand) {
+        this.rankBand = rankBand;
     }
 }
