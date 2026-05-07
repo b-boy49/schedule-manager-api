@@ -19,7 +19,19 @@ function setNavBadge(key, count) {
         return;
     }
     const label = node.dataset.navLabel || node.textContent;
-    node.textContent = count > 0 ? `${label} (${count})` : label;
+    node.textContent = count > 0 ? `${label}${toCircledCount(count)}` : label;
+}
+
+function toCircledCount(count) {
+    const n = Number(count || 0);
+    if (n <= 0) {
+        return "";
+    }
+    const map = ["", "①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩", "⑪", "⑫", "⑬", "⑭", "⑮", "⑯", "⑰", "⑱", "⑲", "⑳"];
+    if (n <= 20) {
+        return map[n];
+    }
+    return `(${n})`;
 }
 
 loadNavBadges();

@@ -1,0 +1,11 @@
+:root {
+  --bg: #0f1419;
+  --panel: #17202a;
+  --text: #e7e9ea;
+  --muted: #8b98a5;
+  --accent: #1d9bf0;
+  --border: #2f3336;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; background: linear-gradient(120deg, #0f1419, #15202b); color: var(--text); }
+input, button { font: inherit; }
